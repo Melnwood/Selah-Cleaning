@@ -1,0 +1,24 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/cleaner"
+  to = "/cleaner.html"
+  status = 200
+
+[[redirects]]
+  from = "/payments"
+  to = "/payments.html"
+  status = 200
+
+[[redirects]]
+  from = "/maintenance"
+  to = "/maintenance.html"
+  status = 200
+
+# Old link kept working
+[[redirects]]
+  from = "/dashboard"
+  to = "/payments.html"
+  status = 301
