@@ -123,6 +123,7 @@ textarea{min-height:70px;resize:vertical}
 .loading{color:var(--soft);font-size:12.5px;text-align:center;padding:20px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .backlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--pine2,#2f5d4a);text-decoration:none;margin:0 0 12px}
+.pagebanner{display:block;width:100%;height:auto;border-radius:14px;margin:0 0 16px;box-shadow:0 2px 10px rgba(20,30,24,.10)}
 .backlink:hover{text-decoration:underline}
 </style>
 </head>
@@ -130,6 +131,7 @@ textarea{min-height:70px;resize:vertical}
 <div class="wrap">
   <header>
     <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
+    <img src="selah-banner.jpg" alt="Selah" class="pagebanner">
     <div class="brand">
       <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
       <div class="txt">
@@ -488,6 +490,9 @@ async function submit(){
   const g=guestList().filter(p=>p.first||p.last);
   const name=document.getElementById('bkName').value.trim();
   const email=document.getElementById('bkEmail').value.trim();
+  const phone=document.getElementById('bkPhone').value.trim();
+  const team=document.getElementById('bkTeam').value.trim();
+  const reason=document.getElementById('reason').value.trim();
   const purpose=document.getElementById('purpose').value;
   const sigName=document.getElementById('sigName').value.trim();
   const agree=document.getElementById('agree').checked;
@@ -498,7 +503,10 @@ async function submit(){
   if(CAP&&g.filter(p=>!p.crib).length>CAP)probs.push(T('Překročena kapacita lůžek.','Over the bed capacity.'));
   if(!name)probs.push(T('Zadejte své jméno.','Enter your name.'));
   if(!email)probs.push(T('Zadejte e-mail.','Enter your email.'));
+  if(!phone)probs.push(T('Zadejte telefon.','Enter your phone number.'));
+  if(!team)probs.push(T('Zadejte JV tým / zemi.','Enter your JV team / country.'));
   if(!purpose)probs.push(T('Vyberte účel pobytu.','Choose the purpose.'));
+  if(!reason)probs.push(T('Krátce popište důvod pobytu.','Briefly describe the reason for your stay.'));
   const acct=document.getElementById('acct').value.trim();
   if(!PAY)probs.push(T('Vyberte způsob platby (JV účet nebo hotově).','Choose how you\'ll pay (JV account or cash).'));
   if(PAY==='account'&&!acct)probs.push(T('Zadejte číslo JV účtu.','Enter your JV account number.'));

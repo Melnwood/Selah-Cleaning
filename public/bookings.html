@@ -108,6 +108,9 @@ details[open] summary::before{content:"▾ ";}
 .rephead .title{flex:1;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px}
 .repactions{display:flex;gap:6px}
 .repactions button{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--pine);border-radius:9px;padding:7px 11px;cursor:pointer}
+.reprange{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:600;color:var(--soft);flex-wrap:wrap}
+.reprange input[type=date]{font:inherit;font-size:13px;font-weight:500;padding:6px 9px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
+.represet{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--pine);border-radius:8px;padding:6px 10px;cursor:pointer;margin-left:auto}
 .repbody{padding:12px 16px 20px}
 .reptable{width:100%;border-collapse:collapse;font-size:12.5px}
 .reptable th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft);padding:6px 8px;border-bottom:1px solid var(--line)}
@@ -155,6 +158,13 @@ details[open] summary::before{content:"▾ ";}
         <button type="button" id="repPrint"><span class="cs-only">Tisk</span><span class="en-only">Print</span></button>
         <button type="button" id="repClose">✕</button>
       </div>
+    </div>
+    <div class="reprange">
+      <span class="cs-only">Období:</span><span class="en-only">Range:</span>
+      <input type="date" id="repFrom" aria-label="From">
+      <span>–</span>
+      <input type="date" id="repTo" aria-label="To">
+      <button type="button" id="repReset" class="represet"><span class="cs-only">Výchozí</span><span class="en-only">Reset</span></button>
     </div>
     <div class="repbody" id="repBody"></div>
   </div>
@@ -391,8 +401,12 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 
 // ---- Accountant report ----
 function payLabel(p){if(!p)return '—';if(/Cash|Hotov/i.test(p))return T('Hotově','Cash');if(/account|účet/i.test(p))return T('JV účet','JV account');return p;}
+let REP_FROM=null, REP_TO=null;
+function toISO(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+function repDefaults(){return {from:toISO(windowStart()), to:toISO(new Date(windowEnd().getTime()-86400000))};}
+function inRange(rec){const ci=d(rec.fields[F.checkin]);if(!ci||!REP_FROM||!REP_TO)return false;return ci>=new Date(REP_FROM)&&ci<=new Date(REP_TO);}
 function reportRows(){
-  const list=combined().filter(inWindow).filter(x=>x.source==='calendar'||stKey(x.fields[F.status])!=='no');
+  const list=combined().filter(inRange).filter(x=>x.source==='calendar'||stKey(x.fields[F.status])!=='no');
   list.sort((a,b)=>d(a.fields[F.checkin])-d(b.fields[F.checkin]));
   return list.map(x=>{
     const f=x.fields, isCal=x.source==='calendar';
@@ -416,10 +430,13 @@ async function getRate(dateISO){
   return fxCache[dateISO];
 }
 let LAST_REPORT={jv:[],cash:[]};
-function winNote(){return `${T('Období','Window')}: ${windowStart().toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}`;}
+function winNote(){return `${T('Období','Range')}: ${new Date(REP_FROM).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(REP_TO).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}`;}
 async function renderReport(){
   const bodyEl=document.getElementById('repBody');
   document.getElementById('repModal').classList.add('show');
+  if(!REP_FROM||!REP_TO){const def=repDefaults();REP_FROM=def.from;REP_TO=def.to;}
+  document.getElementById('repFrom').value=REP_FROM;
+  document.getElementById('repTo').value=REP_TO;
   const rows=reportRows();
   const jv=rows.filter(r=>!r.cash), cash=rows.filter(r=>r.cash);
   const today=new Date().toISOString().slice(0,10);
@@ -460,6 +477,9 @@ function reportTSV(){
   return L.join('\n');
 }
 document.getElementById('reportBtn').onclick=renderReport;
+document.getElementById('repFrom').onchange=e=>{REP_FROM=e.target.value;renderReport();};
+document.getElementById('repTo').onchange=e=>{REP_TO=e.target.value;renderReport();};
+document.getElementById('repReset').onclick=()=>{const def=repDefaults();REP_FROM=def.from;REP_TO=def.to;renderReport();};
 document.getElementById('repClose').onclick=()=>document.getElementById('repModal').classList.remove('show');
 document.getElementById('repPrint').onclick=()=>window.print();
 document.getElementById('repCopy').onclick=()=>{const t=reportTSV();if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast(T('Zkopírováno ✓','Copied ✓')),()=>toast(T('Kopírování selhalo','Copy failed')));};
