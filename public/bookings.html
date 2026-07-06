@@ -40,6 +40,25 @@ header{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px
 .filters{display:flex;gap:6px;margin:10px 0 4px;overflow-x:auto}
 .filt{font:inherit;font-weight:600;font-size:13px;white-space:nowrap;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
 .filt.sel{background:var(--spruce);border-color:var(--spruce);color:#fff}
+.scoperow{display:flex;gap:6px;margin:10px 0 2px}
+.scope{font:inherit;font-weight:700;font-size:13px;flex:1;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
+.scope.sel{background:var(--pine);border-color:var(--pine);color:#fff}
+.btn.pay{background:#fff;border-color:#e5b94e;color:#8a6d1e;flex:none;padding:12px 12px}
+.btn.pay.ispaid{background:var(--donebg,#dbeee0);border-color:#bfe0cb;color:var(--done,#2f6b4c)}
+.btn.emails{background:#eef3ec;border-color:var(--line);color:var(--pine);flex:none;padding:12px 12px}
+.emailpanel{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel2,#f5f8f2);padding:12px}
+.epto{font-size:12px;color:var(--soft);margin-bottom:8px}
+.epnote{font-size:12.5px;color:var(--barn,#a2372a);margin-bottom:8px}
+.epcells{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+@media(max-width:520px){.epcells{grid-template-columns:repeat(2,1fr)}}
+.epcell{font:inherit;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px;cursor:pointer}
+.epcell:hover{border-color:var(--pine2)}
+.epcell:disabled{opacity:.5;cursor:not-allowed}
+.epcell.on{background:var(--donebg,#dbeee0);border-color:#bfe0cb}
+.epcell.busy{opacity:.6}
+.eplbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft)}
+.epst{display:block;font-size:13px;font-weight:600;margin-top:3px;color:var(--pine)}
+.epcell.on .epst{color:var(--done,#2f6b4c)}
 .monthhdr{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:var(--pine);margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--line);text-transform:capitalize}
 
 .bk{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px 16px;margin:10px 0;scroll-margin-top:14px;box-shadow:0 2px 6px rgba(20,30,24,.07)}
@@ -134,11 +153,12 @@ details[open] summary::before{content:"▾ ";}
       <div class="txt">
         <div class="mark">SELAH</div>
         <h1><span class="cs-only">Rezervace — správa</span><span class="en-only">Bookings — review</span></h1>
-        <div class="sub"><span class="cs-only">Následující 3 měsíce · přijměte nebo zamítněte žádosti</span><span class="en-only">Next 3 months · accept or decline requests</span></div>
+        <div class="sub"><span class="cs-only">Upravujte, e-maily a platby — vše na jednom místě</span><span class="en-only">Edit, emails &amp; payments — all in one place</span></div>
       </div>
       <div class="langtog" role="group" aria-label="Jazyk / Language"><button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button></div>
     </div>
     <div class="sumrow" id="sumrow"></div>
+    <div class="scoperow" id="scoperow"></div>
     <div class="filters" id="filters"></div>
     <div class="btnrow">
       <button type="button" id="reportBtn" class="reportbtn">📊 <span class="cs-only">Report pro účetní</span><span class="en-only">Accountant report</span></button>
@@ -190,10 +210,11 @@ const F={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL
   party:'fldRuksM0SOYRaJOS',guests:'fldCv5Z6JFuNuNC3G',email:'fldgNjaFIzrrXFtGp',phone:'fld1jHbXT1sLuGYfm',
   team:'fldO7Wq8cW5Pnifbf',purpose:'fld01hHE2rz4WEnFU',reason:'fldRapIBVEQ7hYL7c',agreed:'fldSRBYqWROkfWvga',
   signature:'fldrTq35YqRfKXXB5',status:'fldpaz8B5NbPQ46pR',submitted:'fldmEZN27QcX4UxPV',payment:'fldHvsV5XaIiSm5hl',acct:'fldGUaa6bMqkISP4e',
-  collected:'fldnxBOu0XpYQNR83',collectedDate:'fldu7w8wlmCLqsG5a'};
+  collected:'fldnxBOu0XpYQNR83',collectedDate:'fldu7w8wlmCLqsG5a',
+  accSent:'fldyEfAAs7Ot72xBp',r7Sent:'fldmGu5DEgUbICdHc',r2Sent:'fldNMqw98yv5doBnL',coSent:'fldAgU8UBLkXFjIsy'};
 const RATES={bed:15,util:15,house:50,apt:25};
 const ST={REQ:'Požadováno (Requested)',OK:'Schváleno (Approved)',NO:'Zamítnuto (Declined)'};
-let RAW=[],CAL=[],CAL_ERR=null,FILTER='all';
+let RAW=[],CAL=[],CAL_ERR=null,FILTER='all',SCOPE='upcoming';
 let LANG=localStorage.getItem('cabin_lang')||'cs';
 const HL=new URLSearchParams(location.search).get('id');
 function T(cs,en){return LANG==='en'?en:cs;}
@@ -264,6 +285,13 @@ function combined(){
 function windowStart(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1);}
 function windowEnd(){const s=windowStart();return new Date(s.getFullYear(),s.getMonth()+3,1);}
 function inWindow(rec){const ci=d(rec.fields[F.checkin]);return ci&&ci>=windowStart()&&ci<windowEnd();}
+function inScope(rec){
+  const co=d(rec.fields[F.checkout])||d(rec.fields[F.checkin]);
+  const today=new Date();today.setHours(0,0,0,0);
+  if(SCOPE==='all')return true;
+  if(SCOPE==='past')return co&&co<today;
+  return co&&co>=today; // upcoming: ongoing + future
+}
 
 function costOf(f){
   const party=+f[F.party]||0;
@@ -274,6 +302,46 @@ function costOf(f){
 }
 function money2(v){return '$'+(Math.round(v*100)/100).toLocaleString('en-US',{maximumFractionDigits:2});}
 function costParts(f){const total=costOf(f);const ppl=+f[F.party]||0;const n=nights(f)||0;return {total,pp:ppl?total/ppl:null,ppn:(ppl&&n)?total/(ppl*n):null};}
+const EMAILS=[
+  {key:'acceptance',field:F.accSent,cs:'Přijetí',en:'Acceptance'},
+  {key:'r7',field:F.r7Sent,cs:'7 dní',en:'7 days'},
+  {key:'r2',field:F.r2Sent,cs:'2 dny',en:'2 days'},
+  {key:'checkout',field:F.coSent,cs:'Odjezd',en:'Checkout'},
+];
+function emailSentCount(f){return EMAILS.filter(e=>f[e.field]).length;}
+function emailCells(x){
+  const f=x.fields,hasEmail=!!f[F.email];
+  return `<div class="epinner">${hasEmail?`<div class="epto">${T('Odesílá se na','Sends to')}: ${esc(f[F.email])}</div>`:`<div class="epnote">⚠ ${T('Tato rezervace nemá e-mail — přidejte ho přes Upravit.','No email on this booking — add one via Edit.')}</div>`}
+    <div class="epcells">${EMAILS.map(e=>{const on=!!f[e.field];return `<button class="epcell ${on?'on':''}" data-sendemail="${x.id}" data-type="${e.key}" ${hasEmail?'':'disabled'}><span class="eplbl">${T(e.cs,e.en)}</span><span class="epst">${on?'✓ '+T('Odesláno','Sent'):T('Odeslat','Send')}</span></button>`;}).join('')}</div></div>`;
+}
+async function markPaid(id,paid){
+  const today=new Date().toISOString().slice(0,10);
+  const fields={[F.collected]:paid,[F.collectedDate]:paid?today:null};
+  try{
+    const r=await fetch(API,{method:'PATCH',headers:hdr(),body:JSON.stringify({table:'bookings',id,fields})});
+    if(r.status===401){toast(T('Chybný přístupový kód.','Wrong access code.'));return;}
+    const data=await r.json();if(!r.ok)throw new Error((data.error&&data.error.message)||data.error||'Error');
+    const rec=RAW.find(x=>x.id===id);if(rec)rec.fields=Object.assign({},rec.fields,fields);
+    toast(paid?T('Označeno jako zaplaceno ✓','Marked paid ✓'):T('Označeno jako nezaplaceno','Marked unpaid'));render();
+  }catch(e){toast(T('Nepodařilo se: ','Failed: ')+(e.message||e));}
+}
+async function sendBookingEmail(id,type,cell){
+  const rec=RAW.find(x=>x.id===id);if(!rec)return;const em=EMAILS.find(e=>e.key===type);
+  const q=rec.fields[em.field]?T('Znovu odeslat tento e-mail?','Resend this email?'):T('Odeslat tento e-mail hostu?','Send this email to the guest?');
+  if(!confirm(q))return;
+  cell.classList.add('busy');
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'sendEmail',id,type})});
+    if(r.status===401){toast(T('Chybný přístupový kód.','Wrong access code.'));cell.classList.remove('busy');return;}
+    const data=await r.json();
+    if(!r.ok||data.error)throw new Error((data&&(data.error&&data.error.message||data.error))||'send_failed');
+    rec.fields[em.field]=true;
+    cell.classList.add('on');cell.querySelector('.epst').textContent='✓ '+T('Odesláno','Sent');
+    const btn=document.querySelector('[data-emails="'+id+'"]');if(btn){const c=emailSentCount(rec.fields);btn.innerHTML='✉️ '+T('E-maily','Emails')+(c>0?' '+c+'/4':'');}
+    toast(T('Odesláno ✓','Sent ✓'));
+  }catch(err){const m=String(err.message||err);toast(m==='mailer_not_configured'?T('E-mail zatím není nastaven.','Email isn\'t set up yet.'):(m==='no_email'?T('Rezervace nemá e-mail.','Booking has no email.'):T('Odeslání selhalo: ','Send failed: ')+m));}
+  cell.classList.remove('busy');
+}
 function overlaps(a,b){const a1=d(a[F.checkin]),a2=d(a[F.checkout]),b1=d(b[F.checkin]),b2=d(b[F.checkout]);return a1&&a2&&b1&&b2&&a1<b2&&b1<a2;}
 function calTitle(f){
   const last=(f[F.bookedBy]||'').trim().split(/\s+/).pop()||f[F.bookedBy]||'';
@@ -283,18 +351,21 @@ function calTitle(f){
 
 function render(){
   const all=combined();
-  const win=all.filter(inWindow);
+  const win=all.filter(inScope);
   const pend=win.filter(x=>x.source!=='calendar'&&stKey(x.fields[F.status])==='req').length;
   const confN=win.filter(x=>x.source==='calendar'||stKey(x.fields[F.status])==='ok').length;
   document.getElementById('sumrow').innerHTML=`
-    <div class="sum"><div class="n">${win.length}</div><div class="l">${T('Ve výhledu','In window')}</div></div>
+    <div class="sum"><div class="n">${win.length}</div><div class="l">${T('Zobrazeno','Showing')}</div></div>
     <div class="sum pend"><div class="n">${pend}</div><div class="l">${T('Čeká','Pending')}</div></div>
     <div class="sum ok"><div class="n">${confN}</div><div class="l">${T('Potvrzeno','Confirmed')}</div></div>`;
+  const SC=[['upcoming',T('Nadcházející','Upcoming')],['past',T('Minulé','Past')],['all',T('Vše','All')]];
+  document.getElementById('scoperow').innerHTML=SC.map(([k,l])=>`<button class="scope ${SCOPE===k?'sel':''}" data-s="${k}">${l}</button>`).join('');
+  document.querySelectorAll('.scope').forEach(b=>b.onclick=()=>{SCOPE=b.dataset.s;render();});
   const F2=[['all',T('Vše','All')],['req',T('Čeká','Pending')],['ok',T('Potvrzeno','Confirmed')],['no',T('Zamítnuto','Declined')]];
   document.getElementById('filters').innerHTML=F2.map(([k,l])=>`<button class="filt ${FILTER===k?'sel':''}" data-f="${k}">${l}</button>`).join('');
   document.querySelectorAll('.filt').forEach(b=>b.onclick=()=>{FILTER=b.dataset.f;render();});
 
-  let list=all.filter(inWindow);
+  let list=all.filter(inScope);
   if(HL&&!list.find(x=>x.id===HL)){const extra=all.find(x=>x.id===HL);if(extra)list=[extra,...list];}
   if(FILTER==='req')list=list.filter(x=>x.source!=='calendar'&&stKey(x.fields[F.status])==='req');
   else if(FILTER==='ok')list=list.filter(x=>x.source==='calendar'||stKey(x.fields[F.status])==='ok');
@@ -347,16 +418,19 @@ function render(){
       </details>
       <div class="actions">
         <button class="btn edit" data-edit="${x.id}">✏️ ${T('Upravit','Edit')}</button>
+        <button class="btn pay ${f[F.collected]?'ispaid':''}" data-pay="${x.id}" data-paid="${f[F.collected]?1:0}">${f[F.collected]?'💵 '+T('Zaplaceno','Paid'):'○ '+T('Označit zaplaceno','Mark paid')}</button>
+        <button class="btn emails" data-emails="${x.id}">✉️ ${T('E-maily','Emails')}${emailSentCount(f)>0?' '+emailSentCount(f)+'/4':''}</button>
         ${k==='req'?`<button class="btn accept" data-accept="${x.id}">✓ ${T('Přijmout','Accept')}</button><button class="btn decline" data-decline="${x.id}">${T('Zamítnout','Decline')}</button>`
           :k==='ok'?`<button class="btn decline" data-decline="${x.id}">${T('Zrušit schválení','Undo approval')}</button>`
           :`<button class="btn accept" data-accept="${x.id}">✓ ${T('Přesto přijmout','Accept after all')}</button>`}
       </div>
+      <div class="emailpanel" id="ep_${x.id}" hidden>${emailCells(x)}</div>
     </div>`;
   });
   app.innerHTML=html;
   wire();
   if(HL){const el=document.getElementById('bk_'+HL);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
-  document.getElementById('foot').textContent=`${T('Okno','Window')}: ${windowStart().toLocaleDateString(locale(),{month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{month:'short',year:'numeric'})}`;
+  document.getElementById('foot').textContent=`${list.length} ${T('rezervací','bookings')} · ${SCOPE==='past'?T('minulé','past'):SCOPE==='all'?T('vše','all'):T('nadcházející','upcoming')}`;
 }
 function calCard(x,confirmed){
   const f=x.fields;
@@ -378,6 +452,9 @@ function calCard(x,confirmed){
 
 function wire(){
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(b.dataset.edit));
+  document.querySelectorAll('[data-pay]').forEach(b=>b.onclick=()=>markPaid(b.dataset.pay,b.dataset.paid!=='1'));
+  document.querySelectorAll('[data-emails]').forEach(b=>b.onclick=()=>{const p=document.getElementById('ep_'+b.dataset.emails);if(p)p.hidden=!p.hidden;});
+  document.querySelectorAll('[data-sendemail]').forEach(b=>b.onclick=()=>sendBookingEmail(b.dataset.sendemail,b.dataset.type,b));
   document.querySelectorAll('[data-accept]').forEach(b=>b.onclick=()=>setStatus(b.dataset.accept,ST.OK,b));
   document.querySelectorAll('[data-decline]').forEach(b=>b.onclick=()=>setStatus(b.dataset.decline,ST.NO,b));
   document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(b.dataset.copy);const t=b.textContent;b.textContent=T('Zkopírováno ✓','Copied ✓');setTimeout(()=>b.textContent=t,1500);});
