@@ -42,7 +42,10 @@ header{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px
 .filt.sel{background:var(--spruce);border-color:var(--spruce);color:#fff}
 .monthhdr{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:var(--pine);margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--line);text-transform:capitalize}
 
-.bk{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px 16px;margin:10px 0;scroll-margin-top:14px}
+.bk{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px 16px;margin:10px 0;scroll-margin-top:14px;box-shadow:0 2px 6px rgba(20,30,24,.07)}
+.bk.declined{background:#e9ece7;border-color:#d3dacf;box-shadow:none}
+.bk.declined .dates,.bk.declined .who,.bk.declined .meta,.bk.declined .cost{color:var(--soft)}
+.bk.declined .meta .cost{opacity:.7}
 .bk.flash{animation:flash 2s ease}
 @keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--amber)}100%{box-shadow:none}}
 .bk .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
@@ -228,13 +231,14 @@ function buildCalBookings(items){
   return out;
 }
 function combined(){
-  // Airtable bookings win, but pull the JV account # from a matching calendar event when ours is blank
+  // Airtable bookings win, but pull the JV account # from a calendar event with the same check-in
+  // (Google all-day events end the day AFTER checkout, so we match on check-in, not checkout).
   const merged=RAW.map(b=>{
     if(b.fields[F.acct])return b;
-    const c=CAL.find(c=>c.fields[F.checkin]===b.fields[F.checkin]&&c.fields[F.checkout]===b.fields[F.checkout]&&c.fields[F.acct]&&!/^cash$/i.test(c.fields[F.acct]));
+    const c=CAL.find(c=>c.fields[F.checkin]===b.fields[F.checkin]&&c.fields[F.acct]&&!/^cash$/i.test(c.fields[F.acct]));
     return c?{...b,fields:{...b.fields,[F.acct]:c.fields[F.acct]}}:b;
   });
-  const cal=CAL.filter(c=>!RAW.some(b=>b.fields[F.checkin]===c.fields[F.checkin]&&b.fields[F.checkout]===c.fields[F.checkout]));
+  const cal=CAL.filter(c=>!RAW.some(b=>b.fields[F.checkin]===c.fields[F.checkin]));
   return merged.concat(cal);
 }
 
@@ -291,7 +295,7 @@ function render(){
     const badge=k==='ok'?`<span class="badge ok">✓ ${T('SCHVÁLENO','APPROVED')}</span>`:k==='no'?`<span class="badge no">${T('ZAMÍTNUTO','DECLINED')}</span>`:`<span class="badge req">${T('ČEKÁ','PENDING')}</span>`;
     const conf=confirmed.filter(o=>o.id!==x.id&&overlaps(f,o.fields)).map(o=>o.fields[F.bookedBy]);
     const pay=sel(f[F.payment])||'—';const isCash=/Cash|Hotov/i.test(pay);
-    html+=`<div class="bk ${x.id===HL?'flash':''}" id="bk_${x.id}" data-id="${x.id}">
+    html+=`<div class="bk ${k==='no'?'declined':''} ${x.id===HL?'flash':''}" id="bk_${x.id}" data-id="${x.id}">
       <div class="top">
         <div><div class="dates">${human(f[F.checkin])} → ${human(f[F.checkout])}</div>
           <div class="who">${esc(f[F.bookedBy]||'—')} · ${nights(f)} ${T('nocí','nights')}</div></div>
