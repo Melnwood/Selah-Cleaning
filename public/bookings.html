@@ -213,7 +213,7 @@ function costOf(f){
   const cribs=(f[F.guests]||'').split('\n').filter(Boolean).filter(g=>/crib|postýlka/i.test(g)).length;
   const beds=Math.max(0,party-cribs);
   const both=/apartm|Apartment/i.test(sel(f[F.space])||'');
-  return RATES.bed*beds+RATES.util*nights(f)+RATES.house+(both?RATES.apt:0);
+  return RATES.bed*beds*nights(f)+RATES.util*nights(f)+RATES.house+(both?RATES.apt:0);
 }
 function overlaps(a,b){const a1=d(a[F.checkin]),a2=d(a[F.checkout]),b1=d(b[F.checkin]),b2=d(b[F.checkout]);return a1&&a2&&b1&&b2&&a1<b2&&b1<a2;}
 function calTitle(f){

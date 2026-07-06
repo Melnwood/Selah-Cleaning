@@ -66,15 +66,13 @@ textarea{min-height:70px;resize:vertical}
 .day.empty{border:0;background:transparent;cursor:default}
 .day.off{color:#bcc6bd;background:var(--panel2);cursor:default}
 .day.booked{background:var(--barnbg);color:#b06a5e;cursor:default;text-decoration:line-through}
-.day.clean{background:#eee3cf;color:#9a7b3a;cursor:default}
-.day.clean .mini{font-size:9px;line-height:1}
 .day.ci,.day.co{background:var(--sel);color:#fff;font-weight:700}
 .day.inrange{background:var(--selbg)}
 .day .mini{font-size:8.5px;color:var(--soft)}
 .cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11.5px;color:var(--soft)}
 .cal-legend span{display:inline-flex;align-items:center;gap:5px}
 .sw{width:12px;height:12px;border-radius:4px;display:inline-block}
-.sw.b{background:var(--barnbg)}.sw.c{background:#eee3cf}.sw.s{background:var(--sel)}
+.sw.b{background:var(--barnbg)}.sw.s{background:var(--sel)}
 .selbar{margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:13.5px}
 .selbar b{color:var(--pine)}
 .calnote{font-size:11.5px;color:var(--soft);margin-top:8px}
@@ -162,14 +160,13 @@ textarea{min-height:70px;resize:vertical}
   <!-- 2 DATES -->
   <div class="card">
     <h2><span class="step">2</span><span class="cs-only">Termín</span><span class="en-only">Dates</span></h2>
-    <p class="hint"><span class="cs-only">Klepněte na den příjezdu, pak na den odjezdu. Obsazené a úklidové dny nelze vybrat.</span><span class="en-only">Tap your arrival day, then your departure day. Booked and cleaning days can't be selected.</span></p>
+    <p class="hint"><span class="cs-only">Klepněte na den příjezdu, pak na den odjezdu. Obsazené dny nelze vybrat.</span><span class="en-only">Tap your arrival day, then your departure day. Booked days can't be selected.</span></p>
     <div class="cal-head"><button type="button" id="prevM" aria-label="Prev">‹</button><div class="cal-title" id="calTitle"></div><button type="button" id="nextM" aria-label="Next">›</button></div>
     <div class="dow" id="dow"></div>
     <div class="grid" id="grid"><div class="loading">…</div></div>
     <div class="cal-legend">
       <span><i class="sw s"></i><span class="cs-only">Vybráno</span><span class="en-only">Selected</span></span>
       <span><i class="sw b"></i><span class="cs-only">Obsazeno</span><span class="en-only">Booked</span></span>
-      <span><i class="sw c"></i>🧹 <span class="cs-only">Úklid</span><span class="en-only">Cleaning</span></span>
     </div>
     <div class="selbar" id="selbar" hidden></div>
     <div class="err" id="calErr" hidden></div>
@@ -248,7 +245,7 @@ textarea{min-height:70px;resize:vertical}
 
 <script>
 const API='/.netlify/functions/airtable';
-// ==== SELAH RATES ====  Total = 15×people + 15×nights + cleaning(50 house, +25 apt)
+// ==== SELAH RATES ====  Total = 15×people×nights + 15×nights (utilities) + cleaning(50 house, +25 apt)
 const RATES={ bedPerPerson:15, utilitiesPerNight:15, cleanHouse:50, cleanApt:25, cur:'$' };
 // Bookings table field IDs
 const BF={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL8HMEl49AaY',checkout:'fld6qnW9lBTsRze3u',
@@ -317,8 +314,7 @@ function renderCal(){
   for(let d=1;d<=dim;d++){
     const dt=new Date(y,m,d), s=fmt(dt); let cls='day', extra='', dis=false;
     if(dt<today){cls+=' off';dis=true;}
-    else if(BOOKED.has(s)){cls+=' booked';dis=true;}
-    else if(CLEAN.has(s)){cls+=' clean';dis=true;extra='<span class="mini">🧹</span>';}
+    else if(BOOKED.has(s)||CLEAN.has(s)){cls+=' booked';dis=true;}
     if(s===CI)cls+=' ci'; else if(s===CO)cls+=' co';
     else if(CI&&CO&&s>CI&&s<CO)cls+=' inrange';
     cells+=`<button type="button" class="${cls}" data-d="${s}" ${dis?'disabled':''}>${d}${extra}</button>`;
@@ -340,14 +336,14 @@ function pickDay(s){
     // validate every day CI..s inclusive is free (nights + cleaning day)
     let d=parse(CI), end=parse(s), bad=false;
     while(d<=end){ if(isBlocked(fmt(d))){bad=true;break;} d=addDays(d,1); }
-    if(bad){errEl.textContent=T('Ve zvoleném rozsahu je obsazený nebo úklidový den. Vyberte jiný termín.','That range includes a booked or cleaning day. Please pick another.');errEl.hidden=false;renderCal();return;}
+    if(bad){errEl.textContent=T('Ve zvoleném rozsahu je obsazený den. Vyberte jiný termín.','That range includes a booked day. Please pick another.');errEl.hidden=false;renderCal();return;}
     CO=s;
   }
   renderCal();renderSel();renderCost();
 }
 function renderSel(){
   const bar=document.getElementById('selbar');
-  if(CI&&CO){bar.hidden=false;bar.innerHTML=`<b>${human(CI)}</b> → <b>${human(CO)}</b> · ${nights()} ${T('nocí','nights')} · 🧹 ${T('úklid','cleaning')} ${human(CO)}`;}
+  if(CI&&CO){bar.hidden=false;bar.innerHTML=`<b>${human(CI)}</b> → <b>${human(CO)}</b> · ${nights()} ${T('nocí','nights')}`;}
   else if(CI){bar.hidden=false;bar.innerHTML=`${T('Příjezd','Check-in')}: <b>${human(CI)}</b> — ${T('vyberte den odjezdu','now pick your departure day')}`;}
   else bar.hidden=true;
 }
@@ -411,12 +407,12 @@ function renderCost(){
   const people=bedUsers();
   if(!SPACE||!n){el.innerHTML=`<div class="hint" style="margin:0">${T('Vyberte prostor, termín a osoby pro odhad ceny.','Choose space, dates and guests to see an estimate.')}</div>`;return;}
   const kc=v=>RATES.cur+v.toLocaleString('en-US');
-  const beds=RATES.bedPerPerson*people;
+  const beds=RATES.bedPerPerson*people*n;
   const util=RATES.utilitiesPerNight*n;
   const clean=RATES.cleanHouse+(SPACE==='both'?RATES.cleanApt:0);
   const total=beds+util+clean;
   el.innerHTML=`
-    <div class="row"><span>${T('Lůžka','Beds')} · ${people} × ${kc(RATES.bedPerPerson)}</span><span class="v">${kc(beds)}</span></div>
+    <div class="row"><span>${T('Lůžka','Beds')} · ${people} × ${n} ${T('nocí','nights')} × ${kc(RATES.bedPerPerson)}</span><span class="v">${kc(beds)}</span></div>
     <div class="row"><span>${T('Energie','Utilities')} · ${n} × ${kc(RATES.utilitiesPerNight)}</span><span class="v">${kc(util)}</span></div>
     <div class="row"><span>${T('Úklid','Cleaning')} · ${SPACE==='both'?T('dům + apartmán','house + apt'):T('dům','house')}</span><span class="v">${kc(clean)}</span></div>
     <div class="row tot"><span>${T('Přibližně celkem','Approx. total')}</span><span class="v">${kc(total)}</span></div>
