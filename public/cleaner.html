@@ -172,26 +172,16 @@ button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-
       <div class="muted" style="margin-bottom:8px"><span class="cs-only">Vyberte hosty, po kterých uklízíte — úklid se k nim přiřadí.</span><span class="en-only">Pick the guests you’re cleaning up after — the cleaning is linked to them.</span></div>
       <div id="stayList"><div class="muted">…</div></div>
     </section>
-    <!-- 1 · Cleaner -->
+    <!-- 1 · Areas -->
     <section class="card">
-      <div class="eyebrow"><span class="n">1</span><h2><span class="cs-only">Kdo uklízel?</span><span class="en-only">Who cleaned?</span></h2></div>
-      <label class="fld" for="cleaner"><span class="cs-only">Jméno</span><span class="en-only">Name</span></label>
-      <div class="people" id="peopleChips"></div>
-      <input type="text" id="cleaner" list="cleaners" autocomplete="off">
-      <datalist id="cleaners"></datalist>
-      <div class="hint"><span class="cs-only">Vaše jméno se zapamatuje pro příště.</span><span class="en-only">Your name is remembered for next time.</span></div>
-    </section>
-
-    <!-- 2 · Areas -->
-    <section class="card">
-      <div class="eyebrow"><span class="n">2</span><h2><span class="cs-only">Co bylo uklizeno?</span><span class="en-only">What was cleaned?</span></h2></div>
+      <div class="eyebrow"><span class="n">1</span><h2><span class="cs-only">Co bylo uklizeno?</span><span class="en-only">What was cleaned?</span></h2></div>
       <div class="muted" style="margin-bottom:6px"><span class="cs-only">Otevřete sekci a zaškrtněte vše, co jste uklidili.</span><span class="en-only">Open a section and tick everything you cleaned.</span></div>
       <div id="rooms"></div>
     </section>
 
     <!-- 3 · Close-up checklist -->
     <section class="card">
-      <div class="eyebrow"><span class="n">3</span><h2><span class="cs-only">Kontrola při odchodu</span><span class="en-only">Closing checklist</span></h2></div>
+      <div class="eyebrow"><span class="n">2</span><h2><span class="cs-only">Kontrola při odchodu</span><span class="en-only">Closing checklist</span></h2></div>
       <div class="rowbtn">
         <button class="chip" type="button" id="allYes"></button>
       </div>
@@ -201,7 +191,7 @@ button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-
 
     <!-- 4 · Notes + fixing -->
     <section class="card">
-      <div class="eyebrow"><span class="n">4</span><h2><span class="cs-only">Poznámky &amp; opravy</span><span class="en-only">Notes &amp; repairs</span></h2></div>
+      <div class="eyebrow"><span class="n">3</span><h2><span class="cs-only">Poznámky &amp; opravy</span><span class="en-only">Notes &amp; repairs</span></h2></div>
       <label class="fld" for="notes"><span class="cs-only">Poznámky (volitelné)</span><span class="en-only">Notes (optional)</span></label>
       <textarea id="notes"></textarea>
 
@@ -236,7 +226,6 @@ button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-
         <div class="big" id="rPay">—</div>
       </div>
       <div class="body">
-        <div class="line"><span><span class="cs-only">Uklízeč</span><span class="en-only">Cleaner</span></span><span class="v" id="rWho">—</span></div>
         <div class="line"><span><span class="cs-only">Datum</span><span class="en-only">Date</span></span><span class="v" id="rDate">—</span></div>
         <div class="line"><span><span class="cs-only">Úklidová odměna</span><span class="en-only">Cleaning pay</span></span><span class="v pay" id="rBase">—</span></div>
       </div>
@@ -317,7 +306,6 @@ function applyLang(){
   document.getElementById('btnCs').classList.toggle('on',LANG==='cs');
   document.getElementById('btnEn').classList.toggle('on',LANG==='en');
   // placeholders (can't be swapped by CSS)
-  document.getElementById('cleaner').placeholder=T('Napište své jméno…','Type your name…');
   document.getElementById('notes').placeholder=T('Cokoliv, co majitel má vědět o stavu…','Anything the owner should know…');
   document.getElementById('fixNotes').placeholder=T('Např.: prasklý polštář v pokoji s palandami…','e.g. torn cushion in the bunk-beds room…');
   document.getElementById('allYes').innerHTML=allYesCleared()?T('✓ Vše ano','✓ Mark all yes'):T('✕ Zrušit vše','✕ Clear all');
@@ -392,13 +380,8 @@ function recalc(){
   updateBadges();
 }
 
-// ---- People quick-select (name · role) — cleaning form shows cleaners only ----
-const PEOPLE=[{name:'Diana',cs:'Uklízečka',en:'Cleaner'}];
-const pc=document.getElementById('peopleChips');
-pc.innerHTML=PEOPLE.map(p=>`<button type="button" class="chip pchip" data-name="${p.name}"><b>${p.name}</b> · <span class="cs-only">${p.cs}</span><span class="en-only">${p.en}</span></button>`).join('');
-function markPeople(){const v=document.getElementById('cleaner').value.trim();pc.querySelectorAll('.pchip').forEach(b=>b.classList.toggle('on',b.dataset.name===v));}
-pc.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{document.getElementById('cleaner').value=b.dataset.name;markPeople();});
-document.getElementById('cleaner').addEventListener('input',markPeople);
+// Cleaner is always Diana — no name entry needed.
+const CLEANER='Diana';
 
 // ---- Stay picker (recent checkouts) + open repairs ----
 function selv(v){return v&&typeof v==='object'?v.name:v;}
@@ -445,15 +428,12 @@ function renderRepairs(records){
   }).join('');
 }
 
-// ---- Load cleaner suggestions + remembered name ----
+// ---- Load open repairs + stays ----
 (async()=>{
-  const last=localStorage.getItem('cabin_cleaner');if(last)document.getElementById('cleaner').value=last;markPeople();
   try{
     const r=await fetch(API,{headers:hdr()});
     if(r.status===401){promptCode();return;}
     const {records=[]}=await r.json();
-    const names=[...new Set(records.map(x=>x.fields[F.cleaner]).filter(Boolean))].sort();
-    document.getElementById('cleaners').innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
     renderRepairs(records);
   }catch(e){}
   loadStays();
@@ -463,9 +443,7 @@ function renderRepairs(records){
 document.getElementById('submitBtn').addEventListener('click',submit);
 async function submit(){
   const err=document.getElementById('err');err.classList.remove('show');
-  const cleaner=document.getElementById('cleaner').value.trim();
   const problems=[];
-  if(!cleaner)problems.push(T('Zadejte jméno uklízeče.','Enter the cleaner’s name.'));
   if(tasksCount()===0)problems.push(T('Zaškrtněte alespoň jednu uklizenou oblast.','Select at least one cleaned area.'));
   if(state.fixing==='Yes' && !document.getElementById('fixNotes').value.trim())
     problems.push(T('Popište, co je potřeba opravit.','Describe what needs fixing.'));
@@ -473,7 +451,7 @@ async function submit(){
 
   const now=new Date().toISOString();
   const fields={};
-  fields[F.cleaner]=cleaner;
+  fields[F.cleaner]=CLEANER;
   if(state.renter)fields[F.renter]=state.renter;
   ROOMS.forEach(g=>g.items.forEach(([id])=>{fields[id]=!!state.rooms[id];}));
   CHECKS.forEach(([id,,,,yesVal])=>{fields[id]=state.checks[id]?yesVal:'No';});
@@ -488,21 +466,19 @@ async function submit(){
     if(r.status===401){btn.disabled=false;applyLang();promptCode();return;}
     const data=await r.json();
     if(!r.ok)throw new Error((data.error&&data.error.message)||data.error||'Server error');
-    localStorage.setItem('cabin_cleaner',cleaner);
-    showReceipt(cleaner);
+    showReceipt();
   }catch(e){
     btn.disabled=false;applyLang();
     err.innerHTML=T('Nepodařilo se uložit: ','Could not save: ')+esc(String(e.message||e))+'<br>'+T('Zkuste to prosím znovu.','Please try again.');err.classList.add('show');
   }
 }
 
-function showReceipt(cleaner){
+function showReceipt(){
   const pay=payTotal();
   document.getElementById('form').style.display='none';
   document.getElementById('bar').style.display='none';
   document.getElementById('done').style.display='block';
   document.getElementById('rPay').textContent=pay+' Kč';
-  document.getElementById('rWho').textContent=cleaner;
   document.getElementById('rDate').textContent=new Date().toLocaleDateString(LANG==='en'?'en-GB':'cs-CZ',{day:'numeric',month:'long',year:'numeric'});
   document.getElementById('rBase').textContent=pay+' Kč';
   if(state.fixing==='Yes'){const fs=document.getElementById('fixSaved');fs.style.display='block';fs.textContent=T('🔧 Požadavek na údržbu byl vytvořen.','🔧 Maintenance request created.');}

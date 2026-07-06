@@ -71,6 +71,7 @@ details[open] summary::before{content:"▾ ";}
 .btn{font:inherit;font-weight:700;font-size:14px;border-radius:11px;padding:12px;cursor:pointer;border:1px solid transparent;flex:1}
 .btn.accept{background:var(--spruce);color:#fff}
 .btn.decline{background:#fff;border-color:var(--line);color:var(--barn);flex:none;padding:12px 16px}
+.btn.edit{background:#eef1ec;border-color:var(--line);color:var(--pine);flex:none;padding:12px 14px}
 .btn:disabled{opacity:.5;cursor:default}
 .mail{font-size:12.5px;color:var(--pine2);text-decoration:none;font-weight:600}
 .empty{color:var(--soft);text-align:center;padding:34px 10px}
@@ -80,6 +81,18 @@ details[open] summary::before{content:"▾ ";}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--spruce);color:#fff;font-size:13.5px;font-weight:600;padding:11px 16px;border-radius:11px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:80;max-width:90%;text-align:center}
 .reportbtn{margin-top:10px;width:100%;font:inherit;font-weight:700;font-size:14px;color:#fff;background:var(--pine);border:0;border-radius:11px;padding:12px;cursor:pointer}
 #repModal{position:fixed;inset:0;z-index:70;background:rgba(20,30,24,.5);display:none;align-items:flex-end;justify-content:center}
+#editModal{position:fixed;inset:0;z-index:72;background:rgba(20,30,24,.5);display:none;align-items:flex-end;justify-content:center}
+#editModal.show{display:flex}
+@media(min-width:640px){#editModal{align-items:center;padding:16px}}
+.editbody{padding:14px 16px;overflow:auto;display:grid;gap:12px}
+.efield{display:flex;flex-direction:column;gap:5px}
+.efield label{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft);font-weight:700}
+.efield input[type=text],.efield input[type=number],.efield input[type=date],.efield select,.efield textarea{font:inherit;font-size:14px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);width:100%}
+.efield textarea{min-height:64px;resize:vertical}
+.efield.chk{flex-direction:row;align-items:center;gap:9px}
+.efield.chk input{width:20px;height:20px}
+.efield.chk label{text-transform:none;font-size:13.5px;letter-spacing:0}
+.editfoot{position:sticky;bottom:0;background:#fff;display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}
 #repModal.show{display:flex}
 @media(min-width:640px){#repModal{align-items:center;padding:16px}}
 .repsheet{background:#fff;width:100%;max-width:780px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0}
@@ -135,12 +148,27 @@ details[open] summary::before{content:"▾ ";}
   </div>
 </div>
 
+<div id="editModal">
+  <div class="repsheet">
+    <div class="rephead">
+      <div class="title" id="editTitle"></div>
+      <button type="button" id="editClose">✕</button>
+    </div>
+    <div class="editbody" id="editBody"></div>
+    <div class="editfoot">
+      <button type="button" class="btn accept" id="editSave">💾 <span class="cs-only">Uložit</span><span class="en-only">Save</span></button>
+      <button type="button" class="btn decline" id="editCancel"><span class="cs-only">Zrušit</span><span class="en-only">Cancel</span></button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API='/.netlify/functions/airtable';
 const F={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL8HMEl49AaY',checkout:'fld6qnW9lBTsRze3u',
   party:'fldRuksM0SOYRaJOS',guests:'fldCv5Z6JFuNuNC3G',email:'fldgNjaFIzrrXFtGp',phone:'fld1jHbXT1sLuGYfm',
   team:'fldO7Wq8cW5Pnifbf',purpose:'fld01hHE2rz4WEnFU',reason:'fldRapIBVEQ7hYL7c',agreed:'fldSRBYqWROkfWvga',
-  signature:'fldrTq35YqRfKXXB5',status:'fldpaz8B5NbPQ46pR',submitted:'fldmEZN27QcX4UxPV',payment:'fldHvsV5XaIiSm5hl',acct:'fldGUaa6bMqkISP4e'};
+  signature:'fldrTq35YqRfKXXB5',status:'fldpaz8B5NbPQ46pR',submitted:'fldmEZN27QcX4UxPV',payment:'fldHvsV5XaIiSm5hl',acct:'fldGUaa6bMqkISP4e',
+  collected:'fldnxBOu0XpYQNR83',collectedDate:'fldu7w8wlmCLqsG5a'};
 const RATES={bed:15,util:15,house:50,apt:25};
 const ST={REQ:'Požadováno (Requested)',OK:'Schváleno (Approved)',NO:'Zamítnuto (Declined)'};
 let RAW=[],CAL=[],CAL_ERR=null,FILTER='all';
@@ -291,10 +319,12 @@ function render(){
         </div>
         <div class="caltitle"><code>${esc(calTitle(f))}</code><button type="button" data-copy="${esc(calTitle(f))}">${T('Kopírovat pro kalendář','Copy for calendar')}</button></div>
       </details>
-      ${k==='req'?`<div class="actions">
-        <button class="btn accept" data-accept="${x.id}">✓ ${T('Přijmout rezervaci','Accept booking')}</button>
-        <button class="btn decline" data-decline="${x.id}">${T('Zamítnout','Decline')}</button>
-      </div>`:k==='ok'?`<div class="actions"><button class="btn decline" data-decline="${x.id}" style="flex:1">${T('Zrušit schválení','Undo approval')}</button></div>`:`<div class="actions"><button class="btn accept" data-accept="${x.id}" style="flex:1">✓ ${T('Přesto přijmout','Accept after all')}</button></div>`}
+      <div class="actions">
+        <button class="btn edit" data-edit="${x.id}">✏️ ${T('Upravit','Edit')}</button>
+        ${k==='req'?`<button class="btn accept" data-accept="${x.id}">✓ ${T('Přijmout','Accept')}</button><button class="btn decline" data-decline="${x.id}">${T('Zamítnout','Decline')}</button>`
+          :k==='ok'?`<button class="btn decline" data-decline="${x.id}">${T('Zrušit schválení','Undo approval')}</button>`
+          :`<button class="btn accept" data-accept="${x.id}">✓ ${T('Přesto přijmout','Accept after all')}</button>`}
+      </div>
     </div>`;
   });
   app.innerHTML=html;
@@ -321,6 +351,7 @@ function calCard(x,confirmed){
 }
 
 function wire(){
+  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(b.dataset.edit));
   document.querySelectorAll('[data-accept]').forEach(b=>b.onclick=()=>setStatus(b.dataset.accept,ST.OK,b));
   document.querySelectorAll('[data-decline]').forEach(b=>b.onclick=()=>setStatus(b.dataset.decline,ST.NO,b));
   document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(b.dataset.copy);const t=b.textContent;b.textContent=T('Zkopírováno ✓','Copied ✓');setTimeout(()=>b.textContent=t,1500);});
@@ -378,6 +409,71 @@ document.getElementById('repClose').onclick=()=>document.getElementById('repModa
 document.getElementById('repPrint').onclick=()=>window.print();
 document.getElementById('repCopy').onclick=()=>{const t=reportTSV();if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast(T('Zkopírováno ✓','Copied ✓')),()=>toast(T('Kopírování selhalo','Copy failed')));};
 document.getElementById('repModal').addEventListener('click',e=>{if(e.target.id==='repModal')e.currentTarget.classList.remove('show');});
+
+// ---- Edit booking (all fields; save gated by access code on the server) ----
+const EDIT_FIELDS=[
+ {f:F.bookedBy,cs:'Jméno',en:'Name',type:'text'},
+ {f:F.status,cs:'Stav',en:'Status',type:'select',opts:['Požadováno (Requested)','Schváleno (Approved)','Zamítnuto (Declined)']},
+ {f:F.space,cs:'Prostor',en:'Space',type:'select',opts:['Hlavní dům (Main house)','Hlavní dům + apartmán (Main house + Apartment)']},
+ {f:F.checkin,cs:'Příjezd',en:'Check-in',type:'date'},
+ {f:F.checkout,cs:'Odjezd',en:'Check-out',type:'date'},
+ {f:F.party,cs:'Počet osob',en:'Party size',type:'number'},
+ {f:F.guests,cs:'Hosté (jména)',en:'Guests (names)',type:'textarea'},
+ {f:F.purpose,cs:'Účel',en:'Purpose',type:'select',opts:['Osobní / rodinný odpočinek (Personal / family rest)','Retreat / služba (Retreat / ministry)','Jiné (Other)']},
+ {f:F.reason,cs:'Důvod',en:'Reason',type:'textarea'},
+ {f:F.payment,cs:'Platba',en:'Payment',type:'select',opts:['JV účet (JV account)','Hotově (Cash)']},
+ {f:F.acct,cs:'Číslo JV účtu',en:'JV account #',type:'text'},
+ {f:F.team,cs:'JV tým / země',en:'JV team / country',type:'text'},
+ {f:F.email,cs:'E-mail',en:'Email',type:'text'},
+ {f:F.phone,cs:'Telefon',en:'Phone',type:'text'},
+ {f:F.signature,cs:'Podpis',en:'Signature',type:'text'},
+ {f:F.agreed,cs:'Souhlas s pravidly',en:'Rules agreed',type:'checkbox'},
+ {f:F.collected,cs:'Inkasováno (poslední účtované)',en:'Collected (last charged)',type:'checkbox'},
+];
+let EDIT_ID=null;
+function openEdit(id){
+  const rec=RAW.find(x=>x.id===id);if(!rec)return;EDIT_ID=id;const f=rec.fields;
+  document.getElementById('editTitle').textContent=T('Upravit: ','Edit: ')+(f[F.bookedBy]||T('Rezervace','Booking'));
+  document.getElementById('editBody').innerHTML=EDIT_FIELDS.map(fd=>{
+    const label=T(fd.cs,fd.en);
+    if(fd.type==='checkbox')
+      return `<div class="efield chk"><input type="checkbox" data-fid="${fd.f}" data-type="checkbox" id="ef_${fd.f}" ${f[fd.f]?'checked':''}><label for="ef_${fd.f}">${label}</label></div>`;
+    if(fd.type==='select'){const cur=sel(f[fd.f])||'';
+      return `<div class="efield"><label>${label}</label><select data-fid="${fd.f}" data-type="select"><option value=""></option>${fd.opts.map(o=>`<option value="${esc(o)}" ${cur===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}
+    const raw=f[fd.f]==null?'':f[fd.f];
+    if(fd.type==='textarea')
+      return `<div class="efield"><label>${label}</label><textarea data-fid="${fd.f}" data-type="text">${esc(raw)}</textarea></div>`;
+    const it=fd.type==='number'?'number':(fd.type==='date'?'date':'text');
+    const dv=fd.type==='date'?String(raw).slice(0,10):raw;
+    return `<div class="efield"><label>${label}</label><input type="${it}" data-fid="${fd.f}" data-type="${fd.type}" value="${esc(dv)}"></div>`;
+  }).join('');
+  document.getElementById('editModal').classList.add('show');
+}
+async function saveEdit(){
+  if(!EDIT_ID)return;
+  const btn=document.getElementById('editSave');const t=btn.innerHTML;btn.disabled=true;btn.textContent='…';
+  const fields={};
+  document.querySelectorAll('#editBody [data-fid]').forEach(el=>{
+    const fid=el.dataset.fid,type=el.dataset.type;
+    if(type==='checkbox')fields[fid]=el.checked;
+    else if(type==='number'){const v=String(el.value).trim();fields[fid]=v===''?null:(+v);}
+    else fields[fid]=el.value;
+  });
+  try{
+    const r=await fetch(API,{method:'PATCH',headers:hdr(),body:JSON.stringify({table:'bookings',id:EDIT_ID,fields})});
+    if(r.status===401){toast(T('Chybný přístupový kód.','Wrong access code.'));btn.disabled=false;btn.innerHTML=t;return;}
+    const data=await r.json();
+    if(!r.ok)throw new Error((data.error&&data.error.message)||data.error||'Error');
+    const rec=RAW.find(x=>x.id===EDIT_ID);if(rec&&data.fields)rec.fields=Object.assign({},rec.fields,data.fields);
+    document.getElementById('editModal').classList.remove('show');
+    toast(T('Uloženo ✓','Saved ✓'));render();
+  }catch(e){toast(T('Uložení selhalo: ','Save failed: ')+(e.message||e));}
+  btn.disabled=false;btn.innerHTML=t;
+}
+document.getElementById('editClose').onclick=()=>document.getElementById('editModal').classList.remove('show');
+document.getElementById('editCancel').onclick=()=>document.getElementById('editModal').classList.remove('show');
+document.getElementById('editSave').onclick=saveEdit;
+document.getElementById('editModal').addEventListener('click',e=>{if(e.target.id==='editModal')e.currentTarget.classList.remove('show');});
 
 applyLang();
 load();
