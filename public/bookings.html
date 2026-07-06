@@ -75,6 +75,7 @@ details[open] summary::before{content:"▾ ";}
 .btn.accept{background:var(--spruce);color:#fff}
 .btn.decline{background:#fff;border-color:var(--line);color:var(--barn);flex:none;padding:12px 16px}
 .btn.edit{background:#eef1ec;border-color:var(--line);color:var(--pine);flex:none;padding:12px 14px}
+.costbreak{font-family:'Space Mono',monospace;font-size:12px;color:var(--soft);margin-top:7px}
 .btn:disabled{opacity:.5;cursor:default}
 .mail{font-size:12.5px;color:var(--pine2);text-decoration:none;font-weight:600}
 .empty{color:var(--soft);text-align:center;padding:34px 10px}
@@ -255,6 +256,8 @@ function costOf(f){
   const both=/apartm|Apartment/i.test(sel(f[F.space])||'');
   return RATES.bed*beds*nights(f)+RATES.util*nights(f)+RATES.house+(both?RATES.apt:0);
 }
+function money2(v){return '$'+(Math.round(v*100)/100).toLocaleString('en-US',{maximumFractionDigits:2});}
+function costParts(f){const total=costOf(f);const ppl=+f[F.party]||0;const n=nights(f)||0;return {total,pp:ppl?total/ppl:null,ppn:(ppl&&n)?total/(ppl*n):null};}
 function overlaps(a,b){const a1=d(a[F.checkin]),a2=d(a[F.checkout]),b1=d(b[F.checkin]),b2=d(b[F.checkout]);return a1&&a2&&b1&&b2&&a1<b2&&b1<a2;}
 function calTitle(f){
   const last=(f[F.bookedBy]||'').trim().split(/\s+/).pop()||f[F.bookedBy]||'';
@@ -309,6 +312,7 @@ function render(){
         <span class="cost">${'$'+costOf(f).toLocaleString('en-US')}</span>
         <span>💳 ${isCash?T('hotově','cash'):(f[F.acct]?'#'+esc(f[F.acct]):T('JV účet','JV account'))}</span>
       </div>
+      ${(()=>{const cp=costParts(f);return `<div class="costbreak">${money2(cp.total)} ${T('celkem','total')}${cp.pp!=null?' · '+money2(cp.pp)+' / '+T('osoba','person'):''}${cp.ppn!=null?' · '+money2(cp.ppn)+' / '+T('osoba·noc','person·night'):''}</div>`;})()}
       ${conf.length?`<div class="conflict">⚠ ${T('Překrývá se s potvrzenou rezervací','Overlaps a confirmed booking')}: ${esc(conf.join(', '))}</div>`:''}
       <details>
         <summary>${T('Podrobnosti','Details')}</summary>

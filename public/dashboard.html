@@ -87,6 +87,9 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--panel2)}
 
 .rentlist{display:flex;flex-direction:column;gap:8px}
 .rent{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:#fff}
+.rent.click{cursor:pointer;transition:border-color .12s,background .12s}
+.rent.click:hover{border-color:var(--pine2);background:var(--panel2)}
+.card2.bk{cursor:pointer}
 .rent .when{font-family:'Space Mono',monospace;font-size:12px;color:var(--soft);flex:none;width:96px}
 .rent .nm{flex:1;min-width:0;font-weight:600;font-size:14px}
 .rent .clean{font-family:'Space Mono',monospace;font-size:11.5px;color:var(--pine2);white-space:nowrap;flex:none}
@@ -206,6 +209,7 @@ const STATUS={OPEN:'Nové (Open)',PROG:'Probíhá (In Progress)',DONE:'Vyřešen
 const BF={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL8HMEl49AaY',checkout:'fld6qnW9lBTsRze3u',
   party:'fldRuksM0SOYRaJOS',guests:'fldCv5Z6JFuNuNC3G',status:'fldpaz8B5NbPQ46pR',payment:'fldHvsV5XaIiSm5hl',
   acct:'fldGUaa6bMqkISP4e',purpose:'fld01hHE2rz4WEnFU',reason:'fldRapIBVEQ7hYL7c',
+  team:'fldO7Wq8cW5Pnifbf',email:'fldgNjaFIzrrXFtGp',phone:'fld1jHbXT1sLuGYfm',
   collected:'fldnxBOu0XpYQNR83',collectedDate:'fldu7w8wlmCLqsG5a'};
 const RATES={bed:15,util:15,house:50,apt:25};
 let RAW=[],UPCOMING=[],RENT_ERR=null,PERIOD='year';
@@ -285,7 +289,7 @@ function upcomingBookings(){
   const today=new Date();today.setHours(0,0,0,0);const horizon=new Date(today.getTime()+30*86400000);
   return bkApproved().filter(x=>{const f=x.fields;if(!f[BF.checkin]||!f[BF.checkout])return false;const ci=new Date(f[BF.checkin]),co=new Date(f[BF.checkout]);return co>=today&&ci<=horizon;}).sort((a,b)=>a.fields[BF.checkin]<b.fields[BF.checkin]?-1:1);
 }
-function resCard(x){const f=x.fields;const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');return `<div class="card2"><div class="r1"><span><b>${esc(f[BF.bookedBy]||'—')}</b></span><span class="amt" style="font-family:'Space Mono',monospace;font-weight:700">$${bkCost(f).toLocaleString('en-US')}</span></div><div class="meta">${dstr(f[BF.checkin])} – ${dstr(f[BF.checkout])} · ${bkNights(f)} ${T('nocí','nights')}${both?' · '+T('+ apartmán','+ apt'):''}${f[BF.acct]?' · #'+esc(f[BF.acct]):''}</div></div>`;}
+function resCard(x){const f=x.fields;const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');return `<div class="card2" data-open="booking" data-id="${x.id}"><div class="r1"><span><b>${esc(f[BF.bookedBy]||'—')}</b></span><span class="amt" style="font-family:'Space Mono',monospace;font-weight:700">$${bkCost(f).toLocaleString('en-US')}</span></div><div class="meta">${dstr(f[BF.checkin])} – ${dstr(f[BF.checkout])} · ${bkNights(f)} ${T('nocí','nights')}${both?' · '+T('+ apartmán','+ apt'):''}${f[BF.acct]?' · #'+esc(f[BF.acct]):''}</div></div>`;}
 async function loadRentals(){
   try{
     const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'rentals',days:30})});
@@ -394,7 +398,7 @@ function paymentSection(){
 }
 function bkCard(x){
   const f=x.fields;const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');const acct=f[BF.acct]||'';
-  return `<div class="card2 bk">
+  return `<div class="card2 bk" data-open="booking" data-id="${x.id}">
     <div class="r1"><span><b>${esc(f[BF.bookedBy]||'—')}</b> · <span class="d">${dstr(f[BF.checkin])} – ${dstr(f[BF.checkout])}</span></span><span class="amt">$${bkCost(f).toLocaleString('en-US')}</span></div>
     <div class="meta">${payLbl(f)}${acct?' · #'+esc(acct):''} · ${bkNights(f)} ${T('nocí','nights')}${both?' · '+T('+ apartmán','+ apt'):''}</div>
     <button type="button" class="markbtn" data-mark="${x.id}">✓ ${T('Toto byl poslední inkasovaný','This was my last collected')}</button>
@@ -445,7 +449,7 @@ function upcomingBody(){
   const list=upcomingBookings();
   if(!list.length)return `<div class="empty">${T('Žádné pronájmy v příštích 30 dnech.','No rentals in the next 30 days.')}</div>`;
   return `<div class="rentlist">${list.map(x=>{const f=x.fields;const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');
-    return `<div class="rent"><span class="when">${dstr(f[BF.checkin],{day:'numeric',month:'short'})} – ${dstr(f[BF.checkout],{day:'numeric',month:'short'})}</span><span class="nm">${esc(f[BF.bookedBy]||'—')}</span><span class="clean">${bkNights(f)} ${T('nocí','nights')}${both?' · +apt':''}</span></div>`;}).join('')}</div>`;
+    return `<div class="rent click" data-open="booking" data-id="${x.id}"><span class="when">${dstr(f[BF.checkin],{day:'numeric',month:'short'})} – ${dstr(f[BF.checkout],{day:'numeric',month:'short'})}</span><span class="nm">${esc(f[BF.bookedBy]||'—')}</span><span class="clean">${bkNights(f)} ${T('nocí','nights')}${both?' · +apt':''}</span></div>`;}).join('')}</div>`;
 }
 
 // ---- modal / drill-down ----
@@ -567,6 +571,38 @@ function monthView(key){
   }};
 }
 
+function bookingById(id){return (BOOKINGS||[]).find(x=>x.id===id);}
+function bookingView(id){
+  return {title:()=>T('Rezervace','Booking'),body:()=>{
+    const x=bookingById(id);if(!x)return empty();const f=x.fields;
+    const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');
+    const st=selName(f[BF.status])||'';
+    const k=/Schvál|Approved/i.test(st)?'done':(/Zamít|Declined/i.test(st)?'open':'prog');
+    const contact=[f[BF.email]?`<a href="mailto:${esc(f[BF.email])}" style="color:var(--pine2)">${esc(f[BF.email])}</a>`:'',f[BF.phone]?esc(f[BF.phone]):''].filter(Boolean).join(' · ')||'—';
+    const purpose=optLabel(selName(f[BF.purpose]))||'';
+    const total=bkCost(f);const ppl=+f[BF.party]||0;const n=bkNights(f)||0;
+    const m2=v=>'$'+(Math.round(v*100)/100).toLocaleString('en-US',{maximumFractionDigits:2});
+    const perP=ppl?m2(total/ppl):'—';const perPN=(ppl&&n)?m2(total/(ppl*n)):'—';
+    return `<div class="detail">
+      <div class="kv">
+        <span class="k">${T('Host','Guest')}</span><span><b>${esc(f[BF.bookedBy]||'—')}</b></span>
+        <span class="k">${T('Stav','Status')}</span><span><span class="chip2 c-${k}">${esc((optLabel(st)||'—').toUpperCase())}</span></span>
+        <span class="k">${T('Termín','Dates')}</span><span>${dstr(f[BF.checkin])} → ${dstr(f[BF.checkout])} · ${bkNights(f)} ${T('nocí','nights')}</span>
+        <span class="k">${T('Prostor','Space')}</span><span>${both?T('Dům + apartmán','House + apt'):T('Hlavní dům','Main house')}</span>
+        <span class="k">${T('Počet osob','Party')}</span><span>${esc(f[BF.party]||'—')}</span>
+        <span class="k">${T('Celková cena','Total cost')}</span><span class="pay">$${total.toLocaleString('en-US')}</span>
+        <span class="k">${T('Na osobu','Per person')}</span><span>${perP}</span>
+        <span class="k">${T('Na osobu / noc','Per person / night')}</span><span>${perPN}</span>
+        <span class="k">${T('Platba','Payment')}</span><span>${payLbl(f)}${f[BF.acct]?' · #'+esc(f[BF.acct]):''}</span>
+        <span class="k">${T('Inkasováno','Collected')}</span><span>${f[BF.collected]?'✓ '+(f[BF.collectedDate]?dstr(f[BF.collectedDate]):T('ano','yes')):'—'}</span>
+        <span class="k">${T('JV tým','JV team')}</span><span>${esc(f[BF.team]||'—')}</span>
+        <span class="k">${T('Kontakt','Contact')}</span><span>${contact}</span>
+      </div>
+      ${f[BF.guests]?`<div class="sec"><div class="st">${T('Hosté','Guests')}</div><div class="box">${esc(f[BF.guests])}</div></div>`:''}
+      ${(purpose||f[BF.reason])?`<div class="sec"><div class="st">${T('Účel','Purpose')}</div><div class="box">${esc([purpose,f[BF.reason]].filter(Boolean).join(' — '))}</div></div>`:''}
+    </div>`;
+  }};
+}
 document.addEventListener('click',e=>{
   const mk=e.target.closest('[data-mark]');
   if(mk){markCollected(mk.dataset.mark);return;}
@@ -575,6 +611,7 @@ document.addEventListener('click',e=>{
   if(t){const o=t.dataset.open;
     if(o==='list'){stack=[listView(t.dataset.kind)];paint();}
     else if(o==='cleaning')push(cleaningView(t.dataset.id));
+    else if(o==='booking')push(bookingView(t.dataset.id));
     else if(o==='wo')push(woView(t.dataset.id));
     else if(o==='month'){stack=[monthView(t.dataset.key)];paint();}
     return;}
