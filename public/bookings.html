@@ -43,6 +43,10 @@ header{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px
 .scoperow{display:flex;gap:6px;margin:10px 0 2px}
 .scope{font:inherit;font-weight:700;font-size:13px;flex:1;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
 .scope.sel{background:var(--pine);border-color:var(--pine);color:#fff}
+.rangerow{display:flex;align-items:center;gap:7px;margin:8px 0 2px;flex-wrap:wrap;font-size:12.5px;font-weight:600;color:var(--soft)}
+.rangerow .rl{font-size:12px}
+.rangerow input[type=date]{font:inherit;font-size:13px;font-weight:500;padding:6px 9px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
+.rangerow #lClear{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--barn,#a2372a);border-radius:8px;padding:6px 10px;cursor:pointer}
 .btn.pay{background:#fff;border-color:#e5b94e;color:#8a6d1e;flex:none;padding:12px 12px}
 .btn.pay.ispaid{background:var(--donebg,#dbeee0);border-color:#bfe0cb;color:var(--done,#2f6b4c)}
 .btn.emails{background:#eef3ec;border-color:var(--line);color:var(--pine);flex:none;padding:12px 12px}
@@ -159,6 +163,13 @@ details[open] summary::before{content:"▾ ";}
     </div>
     <div class="sumrow" id="sumrow"></div>
     <div class="scoperow" id="scoperow"></div>
+    <div class="rangerow">
+      <span class="rl"><span class="cs-only">Rozsah dat:</span><span class="en-only">Date range:</span></span>
+      <input type="date" id="lFrom" aria-label="From">
+      <span>–</span>
+      <input type="date" id="lTo" aria-label="To">
+      <button type="button" id="lClear" hidden>✕ <span class="cs-only">Zrušit</span><span class="en-only">Clear</span></button>
+    </div>
     <div class="filters" id="filters"></div>
     <div class="btnrow">
       <button type="button" id="reportBtn" class="reportbtn">📊 <span class="cs-only">Report pro účetní</span><span class="en-only">Accountant report</span></button>
@@ -214,7 +225,7 @@ const F={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL
   accSent:'fldyEfAAs7Ot72xBp',r7Sent:'fldmGu5DEgUbICdHc',r2Sent:'fldNMqw98yv5doBnL',coSent:'fldAgU8UBLkXFjIsy'};
 const RATES={bed:15,util:15,house:50,apt:25};
 const ST={REQ:'Požadováno (Requested)',OK:'Schváleno (Approved)',NO:'Zamítnuto (Declined)'};
-let RAW=[],CAL=[],CAL_ERR=null,FILTER='all',SCOPE='upcoming';
+let RAW=[],CAL=[],CAL_ERR=null,FILTER='all',SCOPE='upcoming',LFROM='',LTO='';
 let LANG=localStorage.getItem('cabin_lang')||'cs';
 const HL=new URLSearchParams(location.search).get('id');
 function T(cs,en){return LANG==='en'?en:cs;}
@@ -224,7 +235,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','
 function sel(v){return v&&typeof v==='object'?v.name:v;}
 function stKey(s){s=sel(s)||ST.REQ;if(s.startsWith('Schvál'))return 'ok';if(s.startsWith('Zamít'))return 'no';return 'req';}
 function d(s){return s?new Date(s):null;}
-function human(s){return s?new Date(s).toLocaleDateString(locale(),{weekday:'short',day:'numeric',month:'short'}):'—';}
+function human(s){return s?new Date(s).toLocaleDateString(locale(),{weekday:'short',day:'numeric',month:'short',year:'numeric'}):'—';}
 function nights(f){const a=d(f[F.checkin]),b=d(f[F.checkout]);return a&&b?Math.max(0,Math.round((b-a)/86400000)):0;}
 function monthKey(s){const x=new Date(s);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');}
 function monthLabel(k){const[y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString(locale(),{month:'long',year:'numeric'});}
@@ -351,7 +362,11 @@ function calTitle(f){
 
 function render(){
   const all=combined();
-  const win=all.filter(inScope);
+  const rangeActive=!!(LFROM&&LTO);
+  const inFilter=rangeActive
+    ? (rec=>{const ci=d(rec.fields[F.checkin]);return ci&&ci>=new Date(LFROM)&&ci<=new Date(LTO);})
+    : inScope;
+  const win=all.filter(inFilter);
   const pend=win.filter(x=>x.source!=='calendar'&&stKey(x.fields[F.status])==='req').length;
   const confN=win.filter(x=>x.source==='calendar'||stKey(x.fields[F.status])==='ok').length;
   document.getElementById('sumrow').innerHTML=`
@@ -359,13 +374,19 @@ function render(){
     <div class="sum pend"><div class="n">${pend}</div><div class="l">${T('Čeká','Pending')}</div></div>
     <div class="sum ok"><div class="n">${confN}</div><div class="l">${T('Potvrzeno','Confirmed')}</div></div>`;
   const SC=[['upcoming',T('Nadcházející','Upcoming')],['past',T('Minulé','Past')],['all',T('Vše','All')]];
-  document.getElementById('scoperow').innerHTML=SC.map(([k,l])=>`<button class="scope ${SCOPE===k?'sel':''}" data-s="${k}">${l}</button>`).join('');
-  document.querySelectorAll('.scope').forEach(b=>b.onclick=()=>{SCOPE=b.dataset.s;render();});
+  document.getElementById('scoperow').innerHTML=SC.map(([k,l])=>`<button class="scope ${(!rangeActive&&SCOPE===k)?'sel':''}" data-s="${k}">${l}</button>`).join('');
+  document.querySelectorAll('.scope').forEach(b=>b.onclick=()=>{SCOPE=b.dataset.s;LFROM='';LTO='';render();});
+  // date range controls
+  document.getElementById('lFrom').value=LFROM;
+  document.getElementById('lTo').value=LTO;
+  document.getElementById('lFrom').onchange=e=>{LFROM=e.target.value;render();};
+  document.getElementById('lTo').onchange=e=>{LTO=e.target.value;render();};
+  const clr=document.getElementById('lClear');clr.hidden=!(LFROM||LTO);clr.onclick=()=>{LFROM='';LTO='';render();};
   const F2=[['all',T('Vše','All')],['req',T('Čeká','Pending')],['ok',T('Potvrzeno','Confirmed')],['no',T('Zamítnuto','Declined')]];
   document.getElementById('filters').innerHTML=F2.map(([k,l])=>`<button class="filt ${FILTER===k?'sel':''}" data-f="${k}">${l}</button>`).join('');
   document.querySelectorAll('.filt').forEach(b=>b.onclick=()=>{FILTER=b.dataset.f;render();});
 
-  let list=all.filter(inScope);
+  let list=all.filter(inFilter);
   if(HL&&!list.find(x=>x.id===HL)){const extra=all.find(x=>x.id===HL);if(extra)list=[extra,...list];}
   if(FILTER==='req')list=list.filter(x=>x.source!=='calendar'&&stKey(x.fields[F.status])==='req');
   else if(FILTER==='ok')list=list.filter(x=>x.source==='calendar'||stKey(x.fields[F.status])==='ok');
@@ -430,7 +451,9 @@ function render(){
   app.innerHTML=html;
   wire();
   if(HL){const el=document.getElementById('bk_'+HL);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
-  document.getElementById('foot').textContent=`${list.length} ${T('rezervací','bookings')} · ${SCOPE==='past'?T('minulé','past'):SCOPE==='all'?T('vše','all'):T('nadcházející','upcoming')}`;
+  document.getElementById('foot').textContent=(LFROM&&LTO)
+    ? `${list.length} ${T('rezervací','bookings')} · ${new Date(LFROM).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(LTO).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}`
+    : `${list.length} ${T('rezervací','bookings')} · ${SCOPE==='past'?T('minulé','past'):SCOPE==='all'?T('vše','all'):T('nadcházející','upcoming')}`;
 }
 function calCard(x,confirmed){
   const f=x.fields;
