@@ -109,6 +109,8 @@ details[open] summary::before{content:"▾ ";}
 .reptable th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft);padding:6px 8px;border-bottom:1px solid var(--line)}
 .reptable td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
 .reptable .r{text-align:right;font-family:'Space Mono',monospace;white-space:nowrap}
+.repsec{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--line)}
+.repsec:first-child{margin-top:2px}
 .reptotal{margin-top:12px;font-size:13px;font-weight:700;text-align:right}
 @media print{.wrap,#toast,.reportbtn{display:none!important}#repModal{position:static;display:block!important;background:#fff}#repModal .repactions{display:none}.repsheet{max-height:none;box-shadow:none;border-radius:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
@@ -390,23 +392,62 @@ function reportRows(){
     const account=isCash?T('Hotově','Cash'):(isCal?(acctNum?T('JV účet','JV account'):'—'):payLabel(sel(f[F.payment])));
     const amount=isCal?0:costOf(f);
     const reason=isCal?'':[sel(f[F.purpose])||'',f[F.reason]||''].filter(Boolean).join(' — ');
-    return {name:f[F.bookedBy]||'',dates:human(f[F.checkin])+' → '+human(f[F.checkout]),account,acct:acctNum,amount,amountStr:isCal?'':('$'+amount.toLocaleString('en-US')),reason};
+    return {name:f[F.bookedBy]||'',dates:human(f[F.checkin])+' → '+human(f[F.checkout]),account,acct:acctNum,amount,amountStr:isCal?'':('$'+amount.toLocaleString('en-US')),reason,cash:isCash,checkin:f[F.checkin]||''};
   });
 }
-function renderReport(){
-  const rows=reportRows();
-  const total=rows.reduce((s,r)=>s+(r.amount||0),0);
-  const head=`<tr><th>${T('Jméno','Name')}</th><th>${T('Termín','Dates')}</th><th>${T('Číslo JV účtu','JV account #')}</th><th class="r">${T('Částka','Amount')}</th></tr>`;
-  const body=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.dates)}</td><td>${esc(r.acct||'—')}</td><td class="r">${esc(r.amountStr||'—')}</td></tr>`).join('');
-  document.getElementById('repBody').innerHTML=rows.length
-    ?`<table class="reptable">${head}${body}</table><div class="reptotal">${T('Celkem k zaúčtování','Total to charge')}: $${total.toLocaleString('en-US')}</div><div style="font-size:11px;color:var(--soft);margin-top:6px">${T('Období','Window')}: ${windowStart().toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}. ${T('Rezervace jen z kalendáře nemají uloženou částku.','Calendar-only bookings have no stored amount.')}</div>`
-    :`<div class="empty">${T('Žádné rezervace ve výhledu.','No bookings in the window.')}</div>`;
+const fxCache={};
+async function getRate(dateISO){
+  if(dateISO in fxCache)return fxCache[dateISO];
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'fx',date:dateISO})});
+    const data=await r.json();
+    fxCache[dateISO]=(data&&typeof data.rate==='number')?data.rate:null;
+  }catch(e){fxCache[dateISO]=null;}
+  return fxCache[dateISO];
+}
+let LAST_REPORT={jv:[],cash:[]};
+function winNote(){return `${T('Období','Window')}: ${windowStart().toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}`;}
+async function renderReport(){
+  const bodyEl=document.getElementById('repBody');
   document.getElementById('repModal').classList.add('show');
+  const rows=reportRows();
+  const jv=rows.filter(r=>!r.cash), cash=rows.filter(r=>r.cash);
+  const today=new Date().toISOString().slice(0,10);
+  cash.forEach(r=>{const has=r.checkin&&r.checkin<=today;r.rateDate=has?r.checkin:today;r.estimate=!has;});
+  if(cash.length)bodyEl.innerHTML=`<div class="empty">${T('Načítám kurzy ČNB…','Loading ČNB rates…')}</div>`;
+  await Promise.all([...new Set(cash.map(r=>r.rateDate).filter(Boolean))].map(getRate));
+  cash.forEach(r=>{const rate=fxCache[r.rateDate];r.rate=rate;r.czk=(rate&&r.amount)?Math.round(r.amount*rate):null;});
+  LAST_REPORT={jv,cash};
+  const jvTotal=jv.reduce((s,r)=>s+(r.amount||0),0);
+  const cashUsd=cash.reduce((s,r)=>s+(r.amount||0),0);
+  const cashCzk=cash.reduce((s,r)=>s+(r.czk||0),0);
+  const kc=n=>n.toLocaleString('cs-CZ')+' Kč';
+  let html='';
+  html+=`<div class="repsec">💳 ${T('JV účty','JV accounts')}</div>`;
+  if(jv.length){
+    html+=`<table class="reptable"><tr><th>${T('Jméno','Name')}</th><th>${T('Termín','Dates')}</th><th>${T('Číslo JV účtu','JV account #')}</th><th class="r">${T('Částka','Amount')}</th></tr>`
+      +jv.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.dates)}</td><td>${esc(r.acct||'—')}</td><td class="r">${esc(r.amountStr||'—')}</td></tr>`).join('')
+      +`</table><div class="reptotal">${T('Celkem JV účty','JV total')}: $${jvTotal.toLocaleString('en-US')}</div>`;
+  } else html+=`<div class="empty">${T('Žádné rezervace na JV účet.','No JV-account bookings.')}</div>`;
+  html+=`<div class="repsec">💵 ${T('Hotovost','Cash')}</div>`;
+  if(cash.length){
+    html+=`<table class="reptable"><tr><th>${T('Jméno','Name')}</th><th>${T('Termín','Dates')}</th><th class="r">USD</th><th class="r">${T('Kurz','Rate')}</th><th class="r">CZK</th></tr>`
+      +cash.map(r=>{const rateStr=r.rate?r.rate.toFixed(2)+(r.estimate?'*':''):'—';const czkStr=r.czk!=null?kc(r.czk):'—';return `<tr><td>${esc(r.name)}</td><td>${esc(r.dates)}</td><td class="r">${esc(r.amountStr||'—')}</td><td class="r">${rateStr}</td><td class="r">${czkStr}</td></tr>`;}).join('')
+      +`</table><div class="reptotal">${T('Celkem hotovost','Cash total')}: $${cashUsd.toLocaleString('en-US')} · ${kc(cashCzk)}</div>`;
+    html+=`<div style="font-size:11px;color:var(--soft);margin-top:4px">${T('CZK dle oficiálního kurzu ČNB v den příjezdu.','CZK at the official ČNB rate on the check-in date.')}${cash.some(r=>r.estimate)?' '+T('* odhad podle nejnovějšího kurzu — pobyt zatím nezačal.','* estimate using the latest rate — the stay hasn\'t started yet.'):''}</div>`;
+  } else html+=`<div class="empty">${T('Žádné platby v hotovosti.','No cash bookings.')}</div>`;
+  html+=`<div style="font-size:11px;color:var(--soft);margin-top:8px">${winNote()}. ${T('Rezervace jen z kalendáře nemají uloženou částku.','Calendar-only bookings have no stored amount.')}</div>`;
+  bodyEl.innerHTML=rows.length?html:`<div class="empty">${T('Žádné rezervace ve výhledu.','No bookings in the window.')}</div>`;
 }
 function reportTSV(){
-  const rows=reportRows();
-  const H=[T('Jméno','Name'),T('Termín','Dates'),T('Číslo JV účtu','JV account #'),T('Částka','Amount')];
-  return [H.join('\t')].concat(rows.map(r=>[r.name,r.dates,r.acct,r.amountStr].join('\t'))).join('\n');
+  const {jv,cash}=LAST_REPORT;const L=[];
+  L.push(T('JV účty','JV accounts'));
+  L.push([T('Jméno','Name'),T('Termín','Dates'),T('Číslo JV účtu','JV account #'),T('Částka USD','Amount USD')].join('\t'));
+  jv.forEach(r=>L.push([r.name,r.dates,r.acct,r.amountStr].join('\t')));
+  L.push('');L.push(T('Hotovost','Cash'));
+  L.push([T('Jméno','Name'),T('Termín','Dates'),'USD',T('Kurz','Rate'),'CZK'].join('\t'));
+  cash.forEach(r=>L.push([r.name,r.dates,r.amountStr,(r.rate?r.rate.toFixed(2):''),(r.czk!=null?r.czk:'')].join('\t')));
+  return L.join('\n');
 }
 document.getElementById('reportBtn').onclick=renderReport;
 document.getElementById('repClose').onclick=()=>document.getElementById('repModal').classList.remove('show');

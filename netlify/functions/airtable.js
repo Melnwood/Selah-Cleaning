@@ -55,6 +55,7 @@ exports.handler = async (event) => {
       if (body.action === 'rentals') return await rentals(body);
       if (body.action === 'book') return await book(body);
       if (body.action === 'bookingStatus') return await bookingStatus(body);
+      if (body.action === 'fx') return await fxRate(body);
       if (!body.fields || typeof body.fields !== 'object') return resp(400, { error: 'Missing "fields".' });
       const r = await fetch(AT, {
         method: 'POST',
@@ -302,6 +303,33 @@ async function googleToken(email, privateKey, scope) {
   const data = await r.json();
   if (!r.ok) throw new Error((data && (data.error_description || data.error)) || 'google_token_failed');
   return data.access_token;
+}
+
+async function fxRate(body) {
+  const date = body && body.date;
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return resp(400, { error: 'fx: bad or missing date (YYYY-MM-DD).' });
+  const base = 'https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt';
+  // ČNB only publishes on business days — walk back up to 6 days for weekends/holidays.
+  for (let i = 0; i < 6; i++) {
+    const dt = new Date(date + 'T00:00:00Z');
+    dt.setUTCDate(dt.getUTCDate() - i);
+    const dd = String(dt.getUTCDate()).padStart(2, '0');
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+    const yy = dt.getUTCFullYear();
+    try {
+      const r = await fetch(`${base}?date=${dd}.${mm}.${yy}`);
+      if (!r.ok) continue;
+      const txt = await r.text();
+      const line = (txt || '').split('\n').find((l) => l.split('|')[3] === 'USD');
+      if (line) {
+        const p = line.split('|');
+        const amt = parseFloat(String(p[2]).replace(',', '.'));
+        const val = parseFloat(String(p[4]).replace(',', '.'));
+        if (amt && val) return resp(200, { rate: val / amt, rateDate: `${yy}-${mm}-${dd}`, requested: date });
+      }
+    } catch (e) { /* try previous day */ }
+  }
+  return resp(200, { rate: null, requested: date });
 }
 
 async function listAll(tableId) {
