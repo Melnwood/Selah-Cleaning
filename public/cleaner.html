@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SELAH · Úklid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9ede6; --panel:#fff; --panel2:#f5f8f2; --ink:#1b2a22; --soft:#54655a;
+  --line:#d6ddd2; --spruce:#1f3a2e; --pine:#2f5d4a; --pine2:#3c7359;
+  --amber:#a56c15; --amberbg:#f5ead2; --barn:#a2372a; --barnbg:#f4ddd6; --gold:#c6a24a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-text-size-adjust:100%;line-height:1.45}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 160px}
+a{color:var(--pine2)}
+
+/* Language toggle — Czech default; body.lang-en flips to English */
+.en-only{display:none}
+body.lang-en .en-only{display:inline}
+body.lang-en .cs-only{display:none}
+.langtog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;flex:none}
+.langtog button{font:inherit;font-weight:700;font-size:12px;letter-spacing:.02em;padding:6px 12px;border:0;background:transparent;color:var(--soft);cursor:pointer}
+.langtog button.on{background:var(--spruce);color:#fff}
+
+/* Header */
+header{position:sticky;top:0;z-index:20;background:linear-gradient(var(--bg),var(--bg) 78%,rgba(233,237,230,0));padding:18px 0 10px}
+.brand{display:flex;align-items:center;gap:10px}
+.roof{width:26px;height:26px;flex:none}
+.roof path{fill:none;stroke:var(--spruce);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.brand h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.01em;margin:0;line-height:1.1}
+.mark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:11px;letter-spacing:.24em;color:var(--amber);line-height:1;margin-bottom:4px}
+.brand .sub{font-size:12px;color:var(--soft);margin-top:3px;letter-spacing:.02em}
+
+/* Sections */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 1px 0 rgba(31,58,46,.03)}
+.eyebrow{display:flex;align-items:baseline;gap:9px;margin:2px 0 14px}
+.eyebrow .n{font-family:'Space Mono',monospace;font-size:12px;color:var(--pine2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;line-height:1.4}
+.eyebrow h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:17px;margin:0;letter-spacing:-.01em}
+
+/* Accordion groups */
+.acc{border:1px solid var(--line);border-radius:13px;overflow:hidden;margin:10px 0;background:#fff}
+.acc.open{border-color:var(--pine2)}
+.acc-head{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--panel2);border:0;font:inherit;padding:14px 14px;cursor:pointer;color:var(--ink)}
+.acc.open .acc-head{background:#fff;border-bottom:1px solid var(--line)}
+.acc-head .chev{width:16px;height:16px;flex:none;transition:transform .18s}
+.acc.open .acc-head .chev{transform:rotate(90deg)}
+.acc-head .chev path{stroke:var(--pine);stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.acc-head .gt{flex:1;min-width:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px}
+.acc-badge{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;white-space:nowrap;padding:3px 9px;border-radius:999px;background:#eef1ec;color:var(--soft)}
+.acc-badge.has{background:var(--amberbg);color:var(--amber)}
+.acc-body{padding:6px 12px 12px}
+.acc-body[hidden]{display:none}
+
+/* Inputs */
+label.fld{display:block;font-size:13px;font-weight:600;color:var(--soft);margin:0 0 6px}
+input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 13px}
+input[type=text]:focus,textarea:focus{outline:2px solid var(--pine2);outline-offset:1px;background:#fff}
+textarea{min-height:70px;resize:vertical}
+
+/* Room rows */
+.room{display:flex;align-items:center;gap:12px;padding:12px 12px;border:1px solid var(--line);border-radius:12px;margin:8px 0;cursor:pointer;background:#fff;user-select:none;transition:border-color .12s,background .12s}
+.room:active{transform:scale(.997)}
+.room.on{border-color:var(--pine2);background:var(--panel2)}
+.tick{width:24px;height:24px;flex:none;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;background:#fff;transition:.12s}
+.room.on .tick{background:var(--pine);border-color:var(--pine)}
+.tick svg{width:14px;height:14px;opacity:0;transition:.12s}
+.room.on .tick svg{opacity:1}
+.tick path{stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.room .txt{flex:1;min-width:0;font-weight:600;font-size:14.5px}
+.room .price{font-family:'Space Mono',monospace;font-size:13px;color:var(--amber);white-space:nowrap;font-weight:700}
+
+/* Closing checklist — single "Ano/Yes" toggle. Not tapped = No = fine. */
+.check{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.check .q{flex:1;min-width:0}
+.check .q .lab{font-weight:600;font-size:14.5px}
+.check .q .fineflag{font-family:'Space Mono',monospace;font-size:11px;color:var(--barn);margin-top:2px}
+.check.on .q .fineflag{display:none}
+.anobtn{font:inherit;font-weight:700;font-size:14px;white-space:nowrap;min-width:96px;padding:11px 14px;border-radius:11px;border:1.5px solid var(--line);background:#fff;color:var(--soft);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.anobtn .mk{width:16px;height:16px}
+.anobtn .mk path{stroke:currentColor;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.check.on .anobtn{background:var(--pine);border-color:var(--pine);color:#fff}
+.check.on .anobtn .mk path{opacity:1}
+.check.on{background:linear-gradient(90deg,transparent, rgba(47,93,74,.05));border-radius:10px}
+
+.rowbtn{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 4px}
+.chip{font:inherit;font-size:12.5px;font-weight:600;color:var(--pine2);background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:7px 12px;cursor:pointer}
+.chip:active{background:#fff}
+.people{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 9px}
+.pchip.on{background:var(--spruce);border-color:var(--spruce);color:#fff}
+.pchip b{font-weight:700}
+
+/* Needs fixing */
+.fixtoggle{display:flex;gap:8px;margin-top:4px}
+.fixtoggle button{flex:1;font:inherit;font-weight:700;padding:12px;border-radius:11px;border:1.5px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
+.fixtoggle button.no.sel{background:var(--pine);border-color:var(--pine);color:#fff}
+.fixtoggle button.yes.sel{background:var(--barn);border-color:var(--barn);color:#fff}
+#fixbox{margin-top:12px;display:none}
+#fixbox.show{display:block}
+
+/* Receipt / summary bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+.bar .inner{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.totals{flex:1;min-width:0}
+.totals .pay{font-family:'Space Mono',monospace;font-weight:700;font-size:22px;color:var(--amber);line-height:1}
+.totals .paylbl{font-size:11px;color:var(--soft);letter-spacing:.03em}
+.totals .fine{font-family:'Space Mono',monospace;font-size:12px;color:var(--barn);margin-top:3px}
+.submit{font:inherit;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px;color:#fff;background:var(--spruce);border:0;border-radius:13px;padding:14px 22px;cursor:pointer;white-space:nowrap}
+.submit:disabled{background:#9fb0a4;cursor:not-allowed}
+.submit:active:not(:disabled){background:var(--pine)}
+
+/* Receipt screen */
+#done{display:none}
+.receipt{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:16px 0}
+.receipt .top{background:var(--spruce);color:#fff;padding:20px;position:relative}
+.receipt .top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:8px;background:repeating-linear-gradient(90deg,var(--gold) 0 10px,transparent 10px 20px)}
+.receipt .top .k{font-family:'Space Mono',monospace;font-size:12px;opacity:.8;letter-spacing:.04em}
+.receipt .top .big{font-family:'Space Mono',monospace;font-size:34px;font-weight:700;margin-top:4px;line-height:1}
+.receipt .body{padding:18px 20px}
+.receipt .line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.receipt .line:last-child{border-bottom:0}
+.receipt .line .v{font-family:'Space Mono',monospace;font-weight:700}
+.receipt .v.pay{color:var(--amber)} .receipt .v.fine{color:var(--barn)}
+.finelist{margin:8px 0 0;padding:12px;background:var(--barnbg);border-radius:11px;font-size:13px}
+.finelist ul{margin:6px 0 0;padding-left:18px}
+
+.err{background:var(--barnbg);border:1px solid var(--barn);color:#7a281d;border-radius:11px;padding:11px 13px;font-size:13.5px;margin:10px 0;display:none}
+.err.show{display:block}
+.muted{color:var(--soft);font-size:12.5px}
+.hint{font-size:12px;color:var(--soft);margin-top:6px}
+button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
+      <div style="flex:1;min-width:0">
+        <div class="mark">SELAH</div>
+        <h1><span class="cs-only">Úklid chaty &amp; apartmánu</span><span class="en-only">Cabin &amp; apartment cleaning</span></h1>
+        <div class="sub"><span class="cs-only">Formulář úklidu</span><span class="en-only">Cleaning report</span> · <span id="todayStr"></span></div>
+      </div>
+      <div class="langtog" role="group" aria-label="Jazyk / Language">
+        <button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="form">
+    <!-- 1 · Cleaner -->
+    <section class="card">
+      <div class="eyebrow"><span class="n">1</span><h2><span class="cs-only">Kdo uklízel?</span><span class="en-only">Who cleaned?</span></h2></div>
+      <label class="fld" for="cleaner"><span class="cs-only">Jméno</span><span class="en-only">Name</span></label>
+      <div class="people" id="peopleChips"></div>
+      <input type="text" id="cleaner" list="cleaners" autocomplete="off">
+      <datalist id="cleaners"></datalist>
+      <div class="hint"><span class="cs-only">Vaše jméno se zapamatuje pro příště.</span><span class="en-only">Your name is remembered for next time.</span></div>
+    </section>
+
+    <!-- 2 · Areas -->
+    <section class="card">
+      <div class="eyebrow"><span class="n">2</span><h2><span class="cs-only">Co bylo uklizeno?</span><span class="en-only">What was cleaned?</span></h2></div>
+      <div class="muted" style="margin-bottom:6px"><span class="cs-only">Otevřete sekci a zaškrtněte vše, co jste uklidili.</span><span class="en-only">Open a section and tick everything you cleaned.</span></div>
+      <div id="rooms"></div>
+    </section>
+
+    <!-- 3 · Close-up checklist -->
+    <section class="card">
+      <div class="eyebrow"><span class="n">3</span><h2><span class="cs-only">Kontrola při odchodu</span><span class="en-only">Closing checklist</span></h2></div>
+      <div class="rowbtn">
+        <button class="chip" type="button" id="allYes"></button>
+      </div>
+      <div class="muted" style="margin:2px 0 6px"><span class="cs-only">Klepněte na „Ano" u všeho, co hosté před odjezdem udělali. Co neudělali, nechte bez označení.</span><span class="en-only">Tap “Yes” for everything the renters did before leaving. Leave un-tapped whatever they didn’t do.</span></div>
+      <div id="checks"></div>
+    </section>
+
+    <!-- 4 · Notes + fixing -->
+    <section class="card">
+      <div class="eyebrow"><span class="n">4</span><h2><span class="cs-only">Poznámky &amp; opravy</span><span class="en-only">Notes &amp; repairs</span></h2></div>
+      <label class="fld" for="notes"><span class="cs-only">Poznámky (volitelné)</span><span class="en-only">Notes (optional)</span></label>
+      <textarea id="notes"></textarea>
+
+      <label class="fld" style="margin-top:16px"><span class="cs-only">Vidíte něco, co je potřeba opravit?</span><span class="en-only">Anything that needs fixing?</span></label>
+      <div class="fixtoggle" id="fixToggle">
+        <button type="button" class="no sel" data-v="No"><span class="cs-only">Ne</span><span class="en-only">No</span></button>
+        <button type="button" class="yes" data-v="Yes"><span class="cs-only">Ano</span><span class="en-only">Yes</span></button>
+      </div>
+      <div id="fixbox">
+        <label class="fld" for="fixNotes" style="margin-top:4px"><span class="cs-only">Popište, co je potřeba opravit</span><span class="en-only">Describe what needs fixing</span></label>
+        <textarea id="fixNotes"></textarea>
+        <div class="hint"><span class="cs-only">Tímto se vytvoří požadavek na údržbu.</span><span class="en-only">This creates a maintenance request.</span></div>
+      </div>
+    </section>
+
+    <div class="err" id="err"></div>
+    <div class="muted" style="text-align:center;margin-top:8px"><span class="cs-only">Odesláním potvrzujete, že úklid byl dokončen.</span><span class="en-only">Submitting marks this cleaning as completed.</span></div>
+  </div>
+
+  <!-- Receipt screen -->
+  <div id="done">
+    <div class="receipt">
+      <div class="top">
+        <div class="k"><span class="cs-only">ODMĚNA</span><span class="en-only">PAY</span></div>
+        <div class="big" id="rPay">—</div>
+      </div>
+      <div class="body">
+        <div class="line"><span><span class="cs-only">Uklízeč</span><span class="en-only">Cleaner</span></span><span class="v" id="rWho">—</span></div>
+        <div class="line"><span><span class="cs-only">Datum</span><span class="en-only">Date</span></span><span class="v" id="rDate">—</span></div>
+        <div class="line"><span><span class="cs-only">Úklidová odměna</span><span class="en-only">Cleaning pay</span></span><span class="v pay" id="rBase">—</span></div>
+      </div>
+    </div>
+    <div style="text-align:center;color:var(--soft);font-size:13.5px;margin-bottom:14px"><span class="cs-only">Uloženo ✓ Záznam byl odeslán majiteli.</span><span class="en-only">Saved ✓ Your report was sent.</span></div>
+    <button class="submit" style="width:100%;background:var(--pine)" onclick="location.reload()"><span class="cs-only">Nový úklid</span><span class="en-only">New cleaning</span></button>
+    <div id="fixSaved" style="display:none;text-align:center;font-size:13px;color:var(--barn);margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- Sticky totals bar -->
+<div class="bar" id="bar">
+  <div class="inner">
+    <div class="totals">
+      <div class="pay" id="barPay">200 Kč</div>
+      <div class="paylbl"><span class="cs-only">Odměna</span><span class="en-only">Pay</span> <span id="barTasks"></span></div>
+    </div>
+    <button class="submit" id="submitBtn"><span class="cs-only">Odeslat</span><span class="en-only">Submit</span></button>
+  </div>
+</div>
+
+<script>
+const API='/.netlify/functions/airtable';
+const F={cleaner:'fldlPGZHTcOIL4DvO',notes:'flddOS4VpM1ZNFkdx',needsFixing:'fld1tdDipneoCHk5Z',
+  fixNotes:'fld0ySTAz7IwQ6gys',completed:'fld3RlB1a49YvyLyu',completedAt:'fldwpWWaqqXK3itx4',
+  startAt:'fldy5fzkRiO3WQgd9',mStatus:'fld1XHyJRgSstFmxO',priority:'fldoCrKTXVRW1UX5J'};
+
+// [fieldId, Czech, English, price]
+const ROOMS=[
+ {cs:'Hlavní dům',en:'Main house',items:[
+  ['fldMfuX5Tv1rnqTsC','Kuchyň (přízemí)','Kitchen (ground)',200],
+  ['fldetbVLqJiR7BUxz','Obývací pokoj (přízemí)','Living room (ground)',150],
+  ['fldrhmNigOJzOTvfz','Zadní místnost a vstup','Back room & entry',130],
+  ['fldKilqRocintHJMd','Koupelna (přízemí)','Bathroom (ground)',75],
+  ['fldg4cahU5x8uQ3In','Hlavní ložnice','Master bedroom',100],
+  ['fldwlRDk85Q3vRz7J','Hlavní koupelna','Master bathroom',70],
+  ['fldbhVlH80EYpZiUr','Pokoj s manželskou postelí','Queen bedroom',100],
+  ['fldi3syW5r77F3BXm','Pokoj s palandami','Bunk-beds bedroom',100],
+  ['fldCSRxxXFceyGNwb','Koupelna na chodbě (horní patro)','Hallway bathroom (upstairs)',70]]},
+ {cs:'Okna hlavního domu',en:'Main-house windows',items:[
+  ['fldg3eVFJ59uh3PV1','Okna kuchyň & obývací pokoj (3)','Kitchen & living windows (3)',225],
+  ['fldGqog2FArKZ1f7o','Francouzské dveře kuchyň & obývák (2)','French doors, kitchen & living (2)',8],
+  ['fldv2dmuYke76vRyW','Okna zadní místnost a vstup (2)','Back room & entry windows (2)',135],
+  ['fld3fvt0E46yaizGq','Okno koupelna (1)','Bathroom window (1)',45],
+  ['fldqJGrNKqqD8UQ8B','Okna hlavní ložnice (3 + dveře)','Master windows (3 + door)',180],
+  ['fldHRPb6ud46U8TgR','Okno hlavní koupelny (2)','Master bath window (2)',90],
+  ['fldn2VzncODj06Rz1','Okno pokoje s manželskou postelí (1)','Queen window (1)',45],
+  ['fldHs9u66iXfSzH8u','Okna pokoje s palandami (2)','Bunk-beds windows (2)',90],
+  ['fldSMaF1nCqZNkWh9','Okno koupelny na chodbě (1)','Hallway bath window (1)',45],
+  ['fldNmQWL9OSd3ZZwE','Okno na schodišti (1)','Stair window (1)',45]]},
+ {cs:'Apartmán',en:'Apartment',items:[
+  ['fld0GbY18NMS2iZBD','Apartmán','Apartment',140],
+  ['fldRYJ8tJASnKp64G','Koupelna v apartmánu','Apartment bathroom',70],
+  ['fld4mIbs62ksmPoVr','Okna apartmánu (4)','Apartment windows (4)',225]]}
+];
+// [fieldId, Czech, English, fine, yesValue] — firewood's "Yes" has a trailing space in Airtable
+const CHECKS=[
+ ['fldQDortdSard0Rob','Doplnění dřeva do krbu','Firewood refilled',500,'Yes '],
+ ['fldOA2U6ot11URljE','Vyčištění kávovaru','Coffee maker cleaned',100,'Yes'],
+ ['fldIGBLvWKACsnrbV','Zavřená okna','Windows closed',200,'Yes'],
+ ['fldRURSjkbKlhgqmz','Nádobí umyté a uklizené','Dishes washed & put away',100,'Yes'],
+ ['fldjY2d2pTdRPjfVU','Odpad vynesen','Trash removed',200,'Yes'],
+ ['fldyOQIP4O0s1Y9GN','Světla zhasnutá','Lights turned off',200,'Yes'],
+ ['fldJyOMxHWd0rE1Zo','Dveře zamčené','Doors locked',500,'Yes'],
+ ['fld7g8gRiC49FLWtn','Houpací křesla uvnitř','Rocking chairs inside',200,'Yes']
+];
+const BASE_FEE=200;
+const state={rooms:{},checks:{},fixing:'No'};
+
+// ---- Language ----
+let LANG=localStorage.getItem('cabin_lang')||'cs';
+function T(cs,en){return LANG==='en'?en:cs;}
+function tspan(cs,en){return '<span class="cs-only">'+esc(cs)+'</span><span class="en-only">'+esc(en)+'</span>';}
+function applyLang(){
+  document.body.classList.toggle('lang-en',LANG==='en');
+  document.documentElement.lang=LANG;
+  document.getElementById('btnCs').classList.toggle('on',LANG==='cs');
+  document.getElementById('btnEn').classList.toggle('on',LANG==='en');
+  // placeholders (can't be swapped by CSS)
+  document.getElementById('cleaner').placeholder=T('Napište své jméno…','Type your name…');
+  document.getElementById('notes').placeholder=T('Cokoliv, co majitel má vědět o stavu…','Anything the owner should know…');
+  document.getElementById('fixNotes').placeholder=T('Např.: prasklý polštář v pokoji s palandami…','e.g. torn cushion in the bunk-beds room…');
+  document.getElementById('allYes').innerHTML=allYesCleared()?T('✓ Vše ano','✓ Mark all yes'):T('✕ Zrušit vše','✕ Clear all');
+  document.getElementById('todayStr').textContent=new Date().toLocaleDateString(LANG==='en'?'en-GB':'cs-CZ',{day:'numeric',month:'short'});
+  recalc();
+}
+document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+function allYesCleared(){return !CHECKS.every(([id])=>state.checks[id]);}
+
+// ---- Build rooms as collapsible accordions ----
+const roomsEl=document.getElementById('rooms');
+ROOMS.forEach((grp,gi)=>{
+  const acc=document.createElement('div');acc.className='acc';
+  const bodyId='accBody'+gi;
+  acc.innerHTML=`<button type="button" class="acc-head" aria-expanded="false" aria-controls="${bodyId}">
+      <svg class="chev" viewBox="0 0 16 16"><path d="M6 3 L11 8 L6 13"/></svg>
+      <span class="gt">${tspan(grp.cs,grp.en)}</span>
+      <span class="acc-badge" data-badge>0</span>
+    </button>
+    <div class="acc-body" id="${bodyId}" hidden></div>`;
+  const head=acc.querySelector('.acc-head'),body=acc.querySelector('.acc-body');
+  head.addEventListener('click',()=>{const open=acc.classList.toggle('open');head.setAttribute('aria-expanded',open);body.hidden=!open;});
+  grp.items.forEach(([id,cs,en,price])=>{
+    const d=document.createElement('div');d.className='room';d.tabIndex=0;d.setAttribute('role','checkbox');d.setAttribute('aria-checked','false');
+    d.innerHTML=`<div class="tick"><svg viewBox="0 0 16 16"><path d="M3 8.5 L6.5 12 L13 4"/></svg></div>
+      <div class="txt">${tspan(cs,en)}</div>`;
+    const toggle=()=>{state.rooms[id]=!state.rooms[id];d.classList.toggle('on',state.rooms[id]);d.setAttribute('aria-checked',state.rooms[id]);recalc();};
+    d.addEventListener('click',toggle);
+    d.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();toggle();}});
+    body.appendChild(d);
+  });
+  grp._badge=acc.querySelector('[data-badge]');
+  roomsEl.appendChild(acc);
+});
+function updateBadges(){ROOMS.forEach(grp=>{let n=0;grp.items.forEach(([id])=>{if(state.rooms[id])n++;});grp._badge.textContent=n?String(n):'0';grp._badge.classList.toggle('has',n>0);});}
+
+// ---- Build checks (single Yes toggle) ----
+const checksEl=document.getElementById('checks');
+CHECKS.forEach(([id,cs,en,fine])=>{
+  const w=document.createElement('div');w.className='check';w.dataset.id=id;
+  w.innerHTML=`<div class="q"><div class="lab">${tspan(cs,en)}</div></div>
+    <button type="button" class="anobtn"><svg class="mk" viewBox="0 0 16 16"><path d="M3 8.5 L6.5 12 L13 4"/></svg><span class="cs-only">Ano</span><span class="en-only">Yes</span></button>`;
+  w.querySelector('.anobtn').addEventListener('click',()=>{state.checks[id]=!state.checks[id];w.classList.toggle('on',state.checks[id]);recalc();});
+  checksEl.appendChild(w);
+});
+document.getElementById('allYes').addEventListener('click',()=>{
+  const allOn=CHECKS.every(([id])=>state.checks[id]);
+  document.querySelectorAll('#checks .check').forEach(w=>{state.checks[w.dataset.id]=!allOn;w.classList.toggle('on',!allOn);});
+  recalc();
+});
+
+// ---- Needs fixing ----
+const fixToggle=document.getElementById('fixToggle');
+fixToggle.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  state.fixing=b.dataset.v;
+  fixToggle.querySelector('.yes').classList.toggle('sel',b.dataset.v==='Yes');
+  fixToggle.querySelector('.no').classList.toggle('sel',b.dataset.v==='No');
+  document.getElementById('fixbox').classList.toggle('show',b.dataset.v==='Yes');
+}));
+
+// ---- Totals ----
+function payTotal(){let s=BASE_FEE;ROOMS.forEach(g=>g.items.forEach(([id,,,p])=>{if(state.rooms[id])s+=p;}));return s;}
+function fineTotal(){let s=0,list=[];CHECKS.forEach(([id,cs,en,fine])=>{if(!state.checks[id]){s+=fine;list.push(T(cs,en)+' ('+fine+' Kč)');}});return{s,list};}
+function tasksCount(){let n=0;ROOMS.forEach(g=>g.items.forEach(([id])=>{if(state.rooms[id])n++;}));return n;}
+function itemWord(n){if(LANG==='en')return n===1?'area':'areas';return n===1?'položka':(n<5?'položky':'položek');}
+function recalc(){
+  const pay=payTotal(),n=tasksCount();
+  document.getElementById('barPay').textContent=pay+' Kč';
+  document.getElementById('barTasks').textContent=n?('· '+n+' '+itemWord(n)):'';
+  document.getElementById('allYes').innerHTML=allYesCleared()?T('✓ Vše ano','✓ Mark all yes'):T('✕ Zrušit vše','✕ Clear all');
+  updateBadges();
+}
+
+// ---- People quick-select (name · role) — cleaning form shows cleaners only ----
+const PEOPLE=[{name:'Diana',cs:'Uklízečka',en:'Cleaner'}];
+const pc=document.getElementById('peopleChips');
+pc.innerHTML=PEOPLE.map(p=>`<button type="button" class="chip pchip" data-name="${p.name}"><b>${p.name}</b> · <span class="cs-only">${p.cs}</span><span class="en-only">${p.en}</span></button>`).join('');
+function markPeople(){const v=document.getElementById('cleaner').value.trim();pc.querySelectorAll('.pchip').forEach(b=>b.classList.toggle('on',b.dataset.name===v));}
+pc.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{document.getElementById('cleaner').value=b.dataset.name;markPeople();});
+document.getElementById('cleaner').addEventListener('input',markPeople);
+
+// ---- Load cleaner suggestions + remembered name ----
+(async()=>{
+  const last=localStorage.getItem('cabin_cleaner');if(last)document.getElementById('cleaner').value=last;markPeople();
+  try{
+    const r=await fetch(API,{headers:hdr()});
+    if(r.status===401){promptCode();return;}
+    const {records=[]}=await r.json();
+    const names=[...new Set(records.map(x=>x.fields[F.cleaner]).filter(Boolean))].sort();
+    document.getElementById('cleaners').innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
+  }catch(e){}
+})();
+
+// ---- Submit ----
+document.getElementById('submitBtn').addEventListener('click',submit);
+async function submit(){
+  const err=document.getElementById('err');err.classList.remove('show');
+  const cleaner=document.getElementById('cleaner').value.trim();
+  const problems=[];
+  if(!cleaner)problems.push(T('Zadejte jméno uklízeče.','Enter the cleaner’s name.'));
+  if(tasksCount()===0)problems.push(T('Zaškrtněte alespoň jednu uklizenou oblast.','Select at least one cleaned area.'));
+  if(state.fixing==='Yes' && !document.getElementById('fixNotes').value.trim())
+    problems.push(T('Popište, co je potřeba opravit.','Describe what needs fixing.'));
+  if(problems.length){err.innerHTML=problems.join('<br>');err.classList.add('show');err.scrollIntoView({behavior:'smooth',block:'center'});return;}
+
+  const now=new Date().toISOString();
+  const fields={};
+  fields[F.cleaner]=cleaner;
+  ROOMS.forEach(g=>g.items.forEach(([id])=>{fields[id]=!!state.rooms[id];}));
+  CHECKS.forEach(([id,,,,yesVal])=>{fields[id]=state.checks[id]?yesVal:'No';});
+  const notes=document.getElementById('notes').value.trim();if(notes)fields[F.notes]=notes;
+  fields[F.needsFixing]=state.fixing;
+  if(state.fixing==='Yes'){fields[F.fixNotes]=document.getElementById('fixNotes').value.trim();fields[F.mStatus]='Nové (Open)';fields[F.priority]='Střední (Medium)';}
+  fields[F.completed]=true;fields[F.startAt]=now;fields[F.completedAt]=now;
+
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent=T('Ukládám…','Saving…');
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({fields})});
+    if(r.status===401){btn.disabled=false;applyLang();promptCode();return;}
+    const data=await r.json();
+    if(!r.ok)throw new Error((data.error&&data.error.message)||data.error||'Server error');
+    localStorage.setItem('cabin_cleaner',cleaner);
+    showReceipt(cleaner);
+  }catch(e){
+    btn.disabled=false;applyLang();
+    err.innerHTML=T('Nepodařilo se uložit: ','Could not save: ')+esc(String(e.message||e))+'<br>'+T('Zkuste to prosím znovu.','Please try again.');err.classList.add('show');
+  }
+}
+
+function showReceipt(cleaner){
+  const pay=payTotal();
+  document.getElementById('form').style.display='none';
+  document.getElementById('bar').style.display='none';
+  document.getElementById('done').style.display='block';
+  document.getElementById('rPay').textContent=pay+' Kč';
+  document.getElementById('rWho').textContent=cleaner;
+  document.getElementById('rDate').textContent=new Date().toLocaleDateString(LANG==='en'?'en-GB':'cs-CZ',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('rBase').textContent=pay+' Kč';
+  if(state.fixing==='Yes'){const fs=document.getElementById('fixSaved');fs.style.display='block';fs.textContent=T('🔧 Požadavek na údržbu byl vytvořen.','🔧 Maintenance request created.');}
+  window.scrollTo(0,0);
+}
+
+// ---- Access code + utils ----
+function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
+function promptCode(){const c=prompt(T('Zadejte přístupový kód','Enter access code'));if(c){localStorage.setItem('cabin_code',c);location.reload();}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+applyLang();
+</script>
+</body>
+</html>

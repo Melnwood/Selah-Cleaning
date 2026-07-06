@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SELAH · Zakázky údržby</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9ede6;--panel:#fff;--panel2:#f5f8f2;--ink:#1b2a22;--soft:#54655a;--line:#d6ddd2;
+  --spruce:#1f3a2e;--pine:#2f5d4a;--pine2:#3c7359;--amber:#a56c15;--barn:#a2372a;--barnbg:#f4ddd6;
+  --open:#a2372a;--prog:#b07d12;--done:#2f6b4c;--wont:#7c877e;--gold:#c6a24a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 80px}
+.en-only{display:none}
+body.lang-en .en-only{display:inline}
+body.lang-en .cs-only{display:none}
+.langtog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;flex:none}
+.langtog button{font:inherit;font-weight:700;font-size:12px;padding:6px 12px;border:0;background:transparent;color:var(--soft);cursor:pointer}
+.langtog button.on{background:var(--spruce);color:#fff}
+header{position:sticky;top:0;z-index:20;background:var(--bg);padding:18px 0 8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.brand{display:flex;align-items:center;gap:10px}
+.roof{width:26px;height:26px;flex:none}
+.roof path{fill:none;stroke:var(--spruce);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.brand h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:19px;margin:0;line-height:1.1}
+.brand .sub{font-size:12px;color:var(--soft);margin-top:3px}
+.brand .txt{flex:1;min-width:0}
+.mark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:11px;letter-spacing:.24em;color:var(--amber);line-height:1;margin-bottom:4px}
+.tnote{font-size:12px;color:var(--soft);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;margin:2px 0 10px;display:flex;gap:7px;align-items:flex-start}
+nav{font-size:13px;margin-top:8px}
+nav a{color:var(--pine2);text-decoration:none;font-weight:600}
+.stats{display:flex;gap:8px;margin:12px 0 4px;flex-wrap:wrap}
+.stat{flex:1;min-width:88px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat .num{font-family:'Space Mono',monospace;font-weight:700;font-size:24px;line-height:1}
+.stat .lbl{font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+.stat.open .num{color:var(--open)} .stat.prog .num{color:var(--prog)} .stat.done .num{color:var(--done)}
+.tabs{display:flex;gap:6px;margin:14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{font:inherit;font-weight:600;font-size:13px;white-space:nowrap;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
+.tab.sel{background:var(--spruce);border-color:var(--spruce);color:#fff}
+.newbtn{width:100%;font:inherit;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px;color:#fff;background:var(--spruce);border:0;border-radius:12px;padding:13px;cursor:pointer;margin:2px 0 4px}
+.newbtn.open{background:var(--pine)}
+.newform{background:var(--panel);border:1px solid var(--pine2);border-radius:14px;padding:16px;margin:10px 0}
+.nf-field{margin-bottom:12px}
+.nf-field>label{display:block;font-size:11px;font-weight:600;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.nf-err{background:var(--barnbg);border:1px solid var(--barn);color:#7a281d;border-radius:10px;padding:9px 11px;font-size:12.5px;margin-bottom:10px}
+.nf-actions{display:flex;gap:8px;align-items:center}
+.ghost{font:inherit;font-weight:600;font-size:13px;color:var(--soft);background:none;border:1px solid var(--line);border-radius:11px;padding:11px 16px;cursor:pointer}
+.wo{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;border-left:5px solid var(--line)}
+.wo.s-open{border-left-color:var(--open)} .wo.s-prog{border-left-color:var(--prog)}
+.wo.s-done{border-left-color:var(--done);opacity:.94} .wo.s-wont{border-left-color:var(--wont);opacity:.85}
+.wo .head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+.wo .ref{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--pine2)}
+.wo .meta{font-size:12px;color:var(--soft);margin-top:2px}
+.wo .meta b{color:var(--ink);font-weight:600}
+.badge{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.b-open{background:var(--barnbg);color:var(--open)} .b-prog{background:#f6ecd2;color:var(--prog)}
+.b-done{background:#dbeee0;color:var(--done)} .b-wont{background:#e7ebe7;color:var(--wont)}
+.desc{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px;font-size:14.5px;margin:8px 0 4px;white-space:pre-wrap}
+.desc .who{font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.statenote{font-size:13px;color:var(--soft);margin:6px 0;white-space:pre-wrap}
+.repaired{background:#eef5ef;border:1px solid #cfe3d3;border-radius:10px;padding:10px 12px;font-size:13.5px;margin:8px 0}
+.repaired .lbl{font-size:11px;color:var(--done);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:3px}
+
+/* Updates timeline */
+.timeline{margin:10px 0 2px;padding-left:2px}
+.tl-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--pine);margin-bottom:6px}
+.tl-item{position:relative;padding:0 0 10px 18px;font-size:13px}
+.tl-item::before{content:"";position:absolute;left:4px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--pine2)}
+.tl-item::after{content:"";position:absolute;left:7px;top:12px;bottom:0;width:2px;background:var(--line)}
+.tl-item:last-child::after{display:none}
+.tl-item .d{font-family:'Space Mono',monospace;font-size:11px;color:var(--soft)}
+.tl-item .au{font-weight:700;color:var(--ink)}
+.tl-empty{font-size:12.5px;color:var(--soft)}
+.people{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 7px}
+.pchip{font:inherit;font-size:12.5px;font-weight:600;color:var(--pine2);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 11px;cursor:pointer}
+.pchip b{font-weight:700}
+.pchip.on{background:var(--spruce);border-color:var(--spruce);color:#fff}
+
+.controls{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px;display:none}
+.controls.show{display:block}
+.toggle{font:inherit;font-weight:600;font-size:13px;color:var(--pine2);background:none;border:0;cursor:pointer;padding:6px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.field{flex:1;min-width:140px}
+.field.full{flex-basis:100%}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.seg{display:flex;gap:5px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:12.5px;font-weight:600;padding:8px 11px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
+.seg button.sel[data-k=status][data-key=open]{background:var(--open);border-color:var(--open);color:#fff}
+.seg button.sel[data-k=status][data-key=prog]{background:var(--prog);border-color:var(--prog);color:#fff}
+.seg button.sel[data-k=status][data-key=done]{background:var(--done);border-color:var(--done);color:#fff}
+.seg button.sel[data-k=status][data-key=wont]{background:var(--wont);border-color:var(--wont);color:#fff}
+.seg button.sel[data-k=prio]{background:var(--spruce);border-color:var(--spruce);color:#fff}
+input[type=text],textarea{width:100%;font:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;color:var(--ink)}
+textarea{min-height:52px;resize:vertical}
+input:focus,textarea:focus{outline:2px solid var(--pine2);outline-offset:1px;background:#fff}
+.save{font:inherit;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;color:#fff;background:var(--spruce);border:0;border-radius:11px;padding:11px 20px;cursor:pointer}
+.save:disabled{background:#9fb0a4}
+.saved{color:var(--done);font-size:13px;font-weight:600;margin-left:12px}
+.empty{text-align:center;color:var(--soft);padding:48px 20px;font-size:15px}
+.loading{text-align:center;color:var(--soft);padding:40px}
+.err{background:var(--barnbg);border:1px solid var(--barn);color:#7a281d;border-radius:11px;padding:12px;margin:12px 0}
+button:focus-visible{outline:2px solid var(--pine2);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
+      <div class="txt">
+        <div class="mark">SELAH</div>
+        <h1><span class="cs-only">Zakázky údržby</span><span class="en-only">Maintenance work orders</span></h1>
+        <div class="sub"><span class="cs-only">Opravy nahlášené z úklidu · průběh a stav</span><span class="en-only">Repairs flagged by cleaners · progress & status</span></div>
+      </div>
+      <div class="langtog" role="group" aria-label="Jazyk / Language">
+        <button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="tabs" id="tabs"></div>
+    <div id="woCreate"></div>
+  </header>
+  <div id="list"><div class="loading">…</div></div>
+</div>
+
+<script>
+const API='/.netlify/functions/airtable';
+const F={fixNotes:'fld0ySTAz7IwQ6gys',notes:'flddOS4VpM1ZNFkdx',needsFixing:'fld1tdDipneoCHk5Z',
+  cleaner:'fldlPGZHTcOIL4DvO',startAt:'fldy5fzkRiO3WQgd9',
+  mStatus:'fld1XHyJRgSstFmxO',priority:'fldoCrKTXVRW1UX5J',assigned:'fldeaalnwAPlZZ5XP',
+  resolvedDate:'fldPq2vqWietaxfgq',resolutionNotes:'fld6ypazIXO4JuPc0',updates:'fldW1sJZ0OW1jRpXq',repairOnly:'fld5vuhp9PnESnelw'};
+const STATUS={OPEN:'Nové (Open)',PROG:'Probíhá (In Progress)',DONE:'Vyřešeno (Resolved)',WONT:'Neopravovat (Won\u2019t Fix)'};
+const STATUS_LIST=[STATUS.OPEN,STATUS.PROG,STATUS.DONE,STATUS.WONT];
+const PRIOS=['Vysoká (High)','Střední (Medium)','Nízká (Low)'];
+let RECORDS=[],FILTER='active';
+let LANG=localStorage.getItem('cabin_lang')||'cs';
+function T(cs,en){return LANG==='en'?en:cs;}
+// --- On-the-fly translation of user-typed Czech text (Reported problem, notes, updates) ---
+const TCACHE=(()=>{try{return JSON.parse(localStorage.getItem('cabin_tcache')||'{}');}catch(e){return {};}})();
+const TRIED=new Set();let translateWarn=false,warnShown=false;
+function userText(t){if(!t)return '';if(LANG!=='en')return t;return TCACHE[t]||t;}
+async function ensureTranslations(texts){
+  if(LANG!=='en')return false;
+  const todo=[...new Set(texts.filter(t=>t&&!(t in TCACHE)&&!TRIED.has(t)))];
+  if(!todo.length)return false;
+  todo.forEach(t=>TRIED.add(t));
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'translate',target:'en',texts:todo})});
+    if(r.status===401){promptCode();return false;}
+    const data=await r.json();
+    if(data.error){translateWarn=true;return false;}
+    const tr=data.translations||[];let added=false;
+    todo.forEach((t,i)=>{const v=tr[i];if(typeof v==='string'&&v.trim()){TCACHE[t]=v;if(v!==t)added=true;}});
+    try{localStorage.setItem('cabin_tcache',JSON.stringify(TCACHE));}catch(e){}
+    return added;
+  }catch(e){translateWarn=true;return false;}
+}
+function optLabel(s){if(!s)return '';const m=String(s).match(/^(.*?)\s*\((.*)\)\s*$/);if(!m)return s;return LANG==='en'?m[2]:m[1];}
+function shortCs(s){return String(s||'').split(' (')[0];}
+function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
+function stamp(){const d=new Date();return d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear();}
+function woRef(id){return '#'+String(id).slice(-4).toUpperCase();}
+const PEOPLE=[{name:'Peter',cs:'Šéf',en:'Boss'},{name:'Romana',cs:'Kancelář',en:'Office'},{name:'Amy',cs:'Registrace',en:'Registration'},{name:'Radim',cs:'Údržbář',en:'Maintenance'}];
+function peopleChips(fill){return `<div class="people">${PEOPLE.map(p=>`<button type="button" class="pchip" data-fill="${fill}" data-name="${esc(p.name)}"><b>${esc(p.name)}</b> · ${esc(T(p.cs,p.en))}</button>`).join('')}</div>`;}
+
+let newOpen=false;
+function renderCreate(){
+  const el=document.getElementById('woCreate');if(!el)return;
+  el.innerHTML=`
+    <button type="button" class="newbtn ${newOpen?'open':''}" id="newBtn">${newOpen?'✕ '+T('Zavřít','Close'):'＋ '+T('Nová zakázka','New work order')}</button>
+    <div class="newform" id="newForm" ${newOpen?'':'hidden'}>
+      <div class="nf-field"><label>${T('Nahlásil/a','Reported by')} *</label>${peopleChips('nreporter')}<input type="text" id="nreporter" placeholder="${T('Jméno','Name')}"></div>
+      <div class="nf-field"><label>${T('Popis závady','What needs fixing')} *</label><textarea id="ndesc" placeholder="${T('Popište, co je potřeba opravit a kde…','Describe what needs fixing and where…')}"></textarea></div>
+      <div class="nf-field"><label>${T('Priorita','Priority')}</label><div class="seg" id="nprio">${PRIOS.map(p=>`<button type="button" data-v="${esc(p)}" class="${p===PRIOS[1]?'sel':''}">${esc(optLabel(p))}</button>`).join('')}</div></div>
+      <div class="nf-field"><label>${T('Přiděleno','Assigned to')}</label>${peopleChips('nassigned')}<input type="text" id="nassigned" value="Radim" placeholder="${T('Kdo opraví','Who will fix it')}"></div>
+      <div class="nf-err" id="nerr" style="display:none"></div>
+      <div class="nf-actions"><button type="button" class="save" id="nsave">${T('Vytvořit zakázku','Create work order')}</button><button type="button" class="ghost" id="ncancel">${T('Zrušit','Cancel')}</button></div>
+    </div>`;
+  document.getElementById('newBtn').onclick=()=>{newOpen=!newOpen;renderCreate();};
+  document.getElementById('ncancel').onclick=()=>{newOpen=false;renderCreate();};
+  const markChips=()=>el.querySelectorAll('.pchip').forEach(b=>{const t=document.getElementById(b.dataset.fill);b.classList.toggle('on',!!t&&t.value.trim()===b.dataset.name);});
+  el.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{const t=document.getElementById(b.dataset.fill);if(t)t.value=b.dataset.name;markChips();});
+  ['nreporter','nassigned'].forEach(id=>{const inp=document.getElementById(id);if(inp)inp.addEventListener('input',markChips);});
+  markChips();
+  el.querySelectorAll('#nprio button').forEach(b=>b.onclick=()=>{el.querySelectorAll('#nprio button').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');});
+  const nsave=document.getElementById('nsave');if(nsave)nsave.onclick=createWO;
+}
+async function createWO(){
+  const reporter=document.getElementById('nreporter').value.trim();
+  const desc=document.getElementById('ndesc').value.trim();
+  const prioEl=document.querySelector('#nprio .sel');const prio=prioEl?prioEl.dataset.v:PRIOS[1];
+  const assigned=document.getElementById('nassigned').value.trim();
+  const errEl=document.getElementById('nerr');errEl.style.display='none';
+  const probs=[];
+  if(!reporter)probs.push(T('Zadejte, kdo zakázku nahlásil.','Enter who is reporting it.'));
+  if(!desc)probs.push(T('Popište, co je potřeba opravit.','Describe what needs fixing.'));
+  if(probs.length){errEl.innerHTML=probs.join('<br>');errEl.style.display='block';return;}
+  const btn=document.getElementById('nsave');btn.disabled=true;btn.textContent=T('Vytvářím…','Creating…');
+  const now=new Date().toISOString();
+  const fields={};
+  fields[F.needsFixing]='Yes';
+  fields[F.fixNotes]=desc;
+  fields[F.cleaner]=reporter;
+  fields[F.mStatus]=STATUS.OPEN;
+  fields[F.priority]=prio;
+  if(assigned)fields[F.assigned]=assigned;
+  fields[F.startAt]=now;
+  fields[F.repairOnly]=true;
+  fields[F.updates]=stamp()+' · '+reporter+' — ['+shortCs(STATUS.OPEN)+'] '+T('zakázka vytvořena','work order created');
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({fields})});
+    if(r.status===401){promptCode();return;}
+    const data=await r.json();
+    if(!r.ok)throw new Error((data.error&&data.error.message)||data.error||'Error');
+    newOpen=false;renderCreate();load();
+  }catch(e){btn.disabled=false;btn.textContent=T('Vytvořit zakázku','Create work order');errEl.innerHTML=T('Uložení selhalo: ','Save failed: ')+esc(e.message||e);errEl.style.display='block';}
+}
+
+function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
+function promptCode(){const c=prompt(T('Zadejte přístupový kód','Enter access code'));if(c){localStorage.setItem('cabin_code',c);location.reload();}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function selName(v){return v&&typeof v==='object'?v.name:v;}
+function statusOf(f){const s=selName(f[F.mStatus]);return s||STATUS.OPEN;}
+function statusKey(s){if(!s)return 'open';if(s.startsWith('Prob'))return 'prog';if(s.startsWith('Vyře'))return 'done';if(s.startsWith('Neop'))return 'wont';return 'open';}
+
+function applyLang(){
+  document.body.classList.toggle('lang-en',LANG==='en');document.documentElement.lang=LANG;
+  document.getElementById('btnCs').classList.toggle('on',LANG==='cs');
+  document.getElementById('btnEn').classList.toggle('on',LANG==='en');
+  renderCreate();
+  if(RECORDS.length||document.getElementById('stats').children.length)render();
+}
+document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+
+async function load(){
+  document.getElementById('list').innerHTML='<div class="loading">'+T('Načítám…','Loading…')+'</div>';
+  try{
+    const r=await fetch(API,{headers:hdr()});
+    if(r.status===401){promptCode();return;}
+    const {records=[]}=await r.json();
+    RECORDS=records.filter(x=>selName(x.fields[F.needsFixing])==='Yes')
+      .sort((a,b)=>new Date(b.fields[F.startAt]||b.createdTime)-new Date(a.fields[F.startAt]||a.createdTime));
+    render();
+  }catch(e){document.getElementById('list').innerHTML='<div class="err">'+T('Nepodařilo se načíst data: ','Could not load data: ')+esc(e.message||e)+'</div>';}
+}
+
+function counts(){const c={open:0,prog:0,done:0,wont:0};RECORDS.forEach(x=>c[statusKey(statusOf(x.fields))]++);return c;}
+
+function render(){
+  const c=counts();
+  document.getElementById('stats').innerHTML=`
+    <div class="stat open"><div class="num">${c.open}</div><div class="lbl">${T('Nové','Open')}</div></div>
+    <div class="stat prog"><div class="num">${c.prog}</div><div class="lbl">${T('Probíhá','In progress')}</div></div>
+    <div class="stat done"><div class="num">${c.done}</div><div class="lbl">${T('Vyřešeno','Resolved')}</div></div>`;
+  const tabs=[['active',T('Aktivní','Active'),c.open+c.prog],['open',T('Nové','Open'),c.open],['prog',T('Probíhá','In progress'),c.prog],['done',T('Vyřešeno','Resolved'),c.done],['wont',T('Neopravovat','Won\u2019t fix'),c.wont],['all',T('Vše','All'),RECORDS.length]];
+  document.getElementById('tabs').innerHTML=tabs.map(([k,l,n])=>`<button class="tab ${FILTER===k?'sel':''}" data-f="${k}">${l} (${n})</button>`).join('');
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{FILTER=t.dataset.f;render();});
+
+  const shown=RECORDS.filter(x=>{const k=statusKey(statusOf(x.fields));if(FILTER==='all')return true;if(FILTER==='active')return k==='open'||k==='prog';return k===FILTER;});
+  const el=document.getElementById('list');
+  if(!shown.length){el.innerHTML='<div class="empty">'+T('Žádné zakázky v této kategorii.','No work orders in this category.')+'<br><span style="font-size:13px">'+T('Klid v lese. 🌲','Nice and quiet. 🌲')+'</span></div>';return;}
+  const note=LANG==='en'?`<div class="tnote"><span>🌐</span><span>${translateWarn?'Translation unavailable — showing the original Czech. Add ANTHROPIC_API_KEY in Netlify to enable it.':'Reported problems and updates are auto-translated to English.'}</span></div>`:'';
+  el.innerHTML=note+shown.map(card).join('');
+  shown.forEach(wire);
+  if(LANG==='en'){
+    const texts=[];
+    shown.forEach(x=>{const f=x.fields;[f[F.fixNotes],f[F.notes],f[F.resolutionNotes]].forEach(t=>{if(t)texts.push(t);});parseUpdates(f).forEach(u=>{if(u.body)texts.push(u.body);});});
+    ensureTranslations(texts).then(added=>{if(added||(translateWarn&&!warnShown)){warnShown=translateWarn;render();}});
+  }
+}
+
+function parseUpdates(f){
+  return String(f[F.updates]||'').split('\n').map(s=>s.trim()).filter(Boolean).map(line=>{
+    let m=line.match(/^(\S+)\s+·\s+(.+?)\s+—\s+(.*)$/);
+    if(m)return {date:m[1],name:m[2],body:m[3]};
+    m=line.match(/^(\S+)\s+—\s+(.*)$/);
+    if(m)return {date:m[1],name:'',body:m[2]};
+    return {date:'',name:'',body:line};
+  });
+}
+
+function card(x){
+  const f=x.fields,st=statusOf(f),k=statusKey(st);
+  const date=f[F.startAt]?new Date(f[F.startAt]).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'}):'—';
+  const prio=selName(f[F.priority]),assigned=f[F.assigned]||'',resNotes=f[F.resolutionNotes]||'';
+  const resDate=f[F.resolvedDate]?new Date(f[F.resolvedDate]).toLocaleDateString(locale()):'';
+  const cleaner=f[F.cleaner]||'—',genNotes=f[F.notes]||'';
+  const ups=parseUpdates(f);
+  const tl=ups.length
+    ? `<div class="timeline"><div class="tl-h">${T('Průběh','Updates')}</div>${ups.map(u=>`<div class="tl-item">${u.date?`<span class="d">${esc(u.date)}</span> `:''}${u.name?`<span class="au">${esc(u.name)}</span> · `:''}${esc(userText(u.body))}</div>`).join('')}</div>`
+    : `<div class="timeline"><div class="tl-h">${T('Průběh','Updates')}</div><div class="tl-empty">${T('Zatím žádné aktualizace.','No updates yet.')}</div></div>`;
+  return `<div class="wo s-${k}" data-id="${x.id}">
+    <div class="head">
+      <div><span class="ref">${T('Zakázka','WO')} ${woRef(x.id)}</span>
+        <div class="meta">${T('Nahlásil/a','Reported by')} <b>${esc(cleaner)}</b> · ${date}${prio?' · <b>'+esc(optLabel(prio))+'</b>':''}${assigned?' · 👤 <b>'+esc(assigned)+'</b>':''}</div></div>
+      <span class="badge b-${k}">${esc(optLabel(st).toUpperCase())}</span>
+    </div>
+    <div class="desc"><div class="who">${T('Popis závady','Reported problem')}</div>${esc(userText(f[F.fixNotes])||T('(bez popisu)','(no description)'))}</div>
+    ${genNotes?`<div class="statenote">📝 ${T('Poznámka z úklidu','Cleaning note')}: ${esc(userText(genNotes))}</div>`:''}
+    ${resNotes?`<div class="repaired"><div class="lbl">${T('Co bylo opraveno','What was repaired')}${resDate?' · '+resDate:''}</div>${esc(userText(resNotes))}</div>`:''}
+    ${tl}
+    <button class="toggle" data-toggle>${T('Aktualizovat / upravit','Update / edit')} ▾</button>
+    <div class="controls">
+      <div class="row">
+        <div class="field full"><label>${T('Stav','Status')}</label><div class="seg" data-seg="status">
+          ${STATUS_LIST.map(s=>`<button data-k="status" data-key="${statusKey(s)}" data-v="${esc(s)}" class="${st===s?'sel':''}">${esc(optLabel(s))}</button>`).join('')}
+        </div></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>${T('Priorita','Priority')}</label><div class="seg" data-seg="prio">
+          ${PRIOS.map(p=>`<button data-k="prio" data-v="${esc(p)}" class="${prio===p?'sel':''}">${esc(optLabel(p))}</button>`).join('')}
+        </div></div>
+        <div class="field"><label>${T('Přiděleno','Assigned to')}</label>${peopleChips('assigned')}<input type="text" data-in="assigned" value="${esc(assigned)}" placeholder="${T('Jméno údržbáře','Maintainer name')}"></div>
+      </div>
+      <div class="field full" style="margin-bottom:10px"><label>➕ ${T('Nová aktualizace (přidá se do průběhu)','Add update (adds to the log)')}</label>
+        ${peopleChips('upname')}
+        <input type="text" data-in="upname" value="${esc(localStorage.getItem('cabin_updater')||'')}" placeholder="${T('Vaše jméno — kdo aktualizuje *','Your name — who is updating *')}" style="margin-bottom:7px">
+        <textarea data-in="update" placeholder="${T('Např.: objednány náhradní díly…','e.g. spare parts ordered…')}"></textarea>
+        <div data-uperr style="display:none;color:var(--barn);font-size:12px;margin-top:5px"></div>
+      </div>
+      <div class="field full" style="margin-bottom:10px"><label>${T('Co bylo opraveno (shrnutí)','What was repaired (summary)')}</label><textarea data-in="resnotes" placeholder="${T('Finální popis opravy…','Final description of the fix…')}">${esc(resNotes)}</textarea></div>
+      <div style="display:flex;align-items:center"><button class="save" data-save>${T('Uložit','Save')}</button><span class="saved" data-msg style="display:none">${T('Uloženo ✓','Saved ✓')}</span></div>
+    </div>
+  </div>`;
+}
+
+function wire(x){
+  const root=document.querySelector(`.wo[data-id="${x.id}"]`);
+  const pending={};
+  // People quick-select chips
+  const markChips=()=>root.querySelectorAll('.pchip').forEach(b=>{const inp=root.querySelector('[data-in="'+b.dataset.fill+'"]');b.classList.toggle('on',!!inp&&inp.value.trim()===b.dataset.name);});
+  root.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{const inp=root.querySelector('[data-in="'+b.dataset.fill+'"]');if(inp)inp.value=b.dataset.name;markChips();});
+  root.querySelectorAll('[data-in=assigned],[data-in=upname]').forEach(inp=>inp.addEventListener('input',markChips));
+  markChips();
+  root.querySelector('[data-toggle]').onclick=e=>{const c=root.querySelector('.controls');c.classList.toggle('show');e.target.textContent=(c.classList.contains('show')?T('Skrýt','Hide')+' ▴':T('Aktualizovat / upravit','Update / edit')+' ▾');};
+  root.querySelectorAll('.seg').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{seg.querySelectorAll('button').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');pending[b.dataset.k]=b.dataset.v;});
+  });
+  root.querySelector('[data-save]').onclick=async function(){
+    const btn=this;
+    const status=pending.status,prio=pending.prio;
+    const statusChanged=status && status!==statusOf(x.fields);
+    const note=root.querySelector('[data-in=update]').value.trim();
+    const upname=root.querySelector('[data-in=upname]').value.trim();
+    const willLog=statusChanged||note;
+    const errEl=root.querySelector('[data-uperr]');errEl.style.display='none';
+    if(willLog && !upname){
+      errEl.textContent=T('Zadejte své jméno k aktualizaci.','Enter your name for the update.');
+      errEl.style.display='block';root.querySelector('[data-in=upname]').focus();return;
+    }
+    btn.disabled=true;btn.textContent=T('Ukládám…','Saving…');
+    const f={};
+    if(status)f[F.mStatus]=status;
+    if(prio)f[F.priority]=prio;
+    f[F.assigned]=root.querySelector('[data-in=assigned]').value.trim();
+    f[F.resolutionNotes]=root.querySelector('[data-in=resnotes]').value.trim();
+    if(status===STATUS.DONE && !x.fields[F.resolvedDate])f[F.resolvedDate]=new Date().toISOString().slice(0,10);
+    if(willLog){
+      const parts=[];
+      if(statusChanged)parts.push('['+shortCs(status)+']');
+      if(note)parts.push(note);
+      const entry=stamp()+' · '+upname+' — '+parts.join(' ');
+      const existing=String(x.fields[F.updates]||'').trim();
+      f[F.updates]=entry+(existing?'\n'+existing:'');
+      localStorage.setItem('cabin_updater',upname);
+    }
+    try{
+      const r=await fetch(API,{method:'PATCH',headers:hdr(),body:JSON.stringify({id:x.id,fields:f})});
+      if(r.status===401){promptCode();return;}
+      const data=await r.json();
+      if(!r.ok)throw new Error((data.error&&data.error.message)||data.error||'Error');
+      x.fields=Object.assign({},x.fields,data.fields,f);
+      root.querySelector('[data-msg]').style.display='inline';
+      setTimeout(render,700);
+    }catch(e){btn.disabled=false;btn.textContent=T('Uložit','Save');alert(T('Uložení selhalo: ','Save failed: ')+(e.message||e));}
+  };
+}
+applyLang();
+load();
+</script>
+</body>
+</html>

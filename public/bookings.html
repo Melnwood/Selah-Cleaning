@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SELAH · Rezervace – správa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9ede6;--panel:#fff;--panel2:#f5f8f2;--ink:#1b2a22;--soft:#54655a;--line:#d6ddd2;
+  --spruce:#1f3a2e;--pine:#2f5d4a;--pine2:#3c7359;--amber:#a56c15;--amberbg:#f5ead2;
+  --barn:#a2372a;--barnbg:#f4ddd6;--done:#2f6b4c;--donebg:#dbeee0;--pend:#b07d12;--pendbg:#f6ecd2;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.45}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 80px}
+.en-only{display:none}
+body.lang-en .en-only{display:inline}
+body.lang-en .cs-only{display:none}
+.langtog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;flex:none}
+.langtog button{font:inherit;font-weight:700;font-size:12px;padding:6px 12px;border:0;background:transparent;color:var(--soft);cursor:pointer}
+.langtog button.on{background:var(--spruce);color:#fff}
+header{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.brand{display:flex;align-items:center;gap:10px}
+.roof{width:26px;height:26px;flex:none}
+.roof path{fill:none;stroke:var(--spruce);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.mark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:11px;letter-spacing:.24em;color:var(--amber);line-height:1;margin-bottom:4px}
+.brand h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:19px;margin:0;line-height:1.1}
+.brand .sub{font-size:12px;color:var(--soft);margin-top:3px}
+.brand .txt{flex:1;min-width:0}
+.sumrow{display:flex;gap:8px;margin:14px 0 4px}
+.sum{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;text-align:center}
+.sum .n{font-family:'Space Mono',monospace;font-weight:700;font-size:22px;line-height:1}
+.sum .l{font-size:10.5px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+.sum.pend .n{color:var(--pend)} .sum.ok .n{color:var(--done)}
+.filters{display:flex;gap:6px;margin:10px 0 4px;overflow-x:auto}
+.filt{font:inherit;font-weight:600;font-size:13px;white-space:nowrap;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
+.filt.sel{background:var(--spruce);border-color:var(--spruce);color:#fff}
+.monthhdr{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:var(--pine);margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--line);text-transform:capitalize}
+
+.bk{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px 16px;margin:10px 0;scroll-margin-top:14px}
+.bk.flash{animation:flash 2s ease}
+@keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--amber)}100%{box-shadow:none}}
+.bk .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.bk .dates{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px}
+.bk .who{font-size:13.5px;color:var(--soft);margin-top:2px}
+.badge{font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;flex:none}
+.badge.req{background:var(--pendbg);color:var(--pend)} .badge.ok{background:var(--donebg);color:var(--done)} .badge.no{background:var(--barnbg);color:var(--barn)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px}
+.meta b{font-weight:700}
+.cost{font-family:'Space Mono',monospace;font-weight:700;color:var(--amber)}
+.conflict{background:var(--barnbg);color:#7a281d;border-radius:9px;padding:7px 10px;font-size:12.5px;margin-top:9px;font-weight:600}
+details{margin-top:10px;border-top:1px dashed var(--line);padding-top:9px}
+details summary{cursor:pointer;font-size:13px;color:var(--pine);font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";}
+details[open] summary::before{content:"▾ ";}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13px;margin-top:9px}
+.kv .k{color:var(--soft)}
+.guestbox{white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;margin-top:4px}
+.caltitle{display:flex;gap:8px;align-items:center;margin-top:10px;background:var(--panel2);border:1px dashed var(--line);border-radius:9px;padding:8px 10px}
+.caltitle code{font-family:'Space Mono',monospace;font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.caltitle button{font:inherit;font-size:11.5px;font-weight:600;color:var(--pine);background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;flex:none}
+.actions{display:flex;gap:8px;margin-top:13px}
+.btn{font:inherit;font-weight:700;font-size:14px;border-radius:11px;padding:12px;cursor:pointer;border:1px solid transparent;flex:1}
+.btn.accept{background:var(--spruce);color:#fff}
+.btn.decline{background:#fff;border-color:var(--line);color:var(--barn);flex:none;padding:12px 16px}
+.btn:disabled{opacity:.5;cursor:default}
+.mail{font-size:12.5px;color:var(--pine2);text-decoration:none;font-weight:600}
+.empty{color:var(--soft);text-align:center;padding:34px 10px}
+.loading{color:var(--soft);text-align:center;padding:48px}
+.err{background:var(--barnbg);border:1px solid var(--barn);color:#7a281d;border-radius:12px;padding:14px;margin:14px 0}
+.foot{font-size:11.5px;color:var(--soft);margin-top:18px;text-align:center}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--spruce);color:#fff;font-size:13.5px;font-weight:600;padding:11px 16px;border-radius:11px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:80;max-width:90%;text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
+      <div class="txt">
+        <div class="mark">SELAH</div>
+        <h1><span class="cs-only">Rezervace — správa</span><span class="en-only">Bookings — review</span></h1>
+        <div class="sub"><span class="cs-only">Následující 3 měsíce · přijměte nebo zamítněte žádosti</span><span class="en-only">Next 3 months · accept or decline requests</span></div>
+      </div>
+      <div class="langtog" role="group" aria-label="Jazyk / Language"><button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button></div>
+    </div>
+    <div class="sumrow" id="sumrow"></div>
+    <div class="filters" id="filters"></div>
+  </header>
+  <div id="app"><div class="loading">…</div></div>
+  <div class="foot" id="foot"></div>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const API='/.netlify/functions/airtable';
+const F={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL8HMEl49AaY',checkout:'fld6qnW9lBTsRze3u',
+  party:'fldRuksM0SOYRaJOS',guests:'fldCv5Z6JFuNuNC3G',email:'fldgNjaFIzrrXFtGp',phone:'fld1jHbXT1sLuGYfm',
+  team:'fldO7Wq8cW5Pnifbf',purpose:'fld01hHE2rz4WEnFU',reason:'fldRapIBVEQ7hYL7c',agreed:'fldSRBYqWROkfWvga',
+  signature:'fldrTq35YqRfKXXB5',status:'fldpaz8B5NbPQ46pR',submitted:'fldmEZN27QcX4UxPV',payment:'fldHvsV5XaIiSm5hl',acct:'fldGUaa6bMqkISP4e'};
+const RATES={bed:15,util:15,house:50,apt:25};
+const ST={REQ:'Požadováno (Requested)',OK:'Schváleno (Approved)',NO:'Zamítnuto (Declined)'};
+let RAW=[],FILTER='all';
+let LANG=localStorage.getItem('cabin_lang')||'cs';
+const HL=new URLSearchParams(location.search).get('id');
+function T(cs,en){return LANG==='en'?en:cs;}
+function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
+function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function sel(v){return v&&typeof v==='object'?v.name:v;}
+function stKey(s){s=sel(s)||ST.REQ;if(s.startsWith('Schvál'))return 'ok';if(s.startsWith('Zamít'))return 'no';return 'req';}
+function d(s){return s?new Date(s):null;}
+function human(s){return s?new Date(s).toLocaleDateString(locale(),{weekday:'short',day:'numeric',month:'short'}):'—';}
+function nights(f){const a=d(f[F.checkin]),b=d(f[F.checkout]);return a&&b?Math.max(0,Math.round((b-a)/86400000)):0;}
+function monthKey(s){const x=new Date(s);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');}
+function monthLabel(k){const[y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString(locale(),{month:'long',year:'numeric'});}
+
+function applyLang(){
+  document.body.classList.toggle('lang-en',LANG==='en');document.documentElement.lang=LANG;
+  document.getElementById('btnCs').classList.toggle('on',LANG==='cs');
+  document.getElementById('btnEn').classList.toggle('on',LANG==='en');
+  if(RAW.length||document.getElementById('filters').children.length)render();
+}
+document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+
+async function load(){
+  try{
+    const r=await fetch(API+'?t=bookings',{headers:hdr()});
+    if(r.status===401){const c=prompt('Access code');if(c){localStorage.setItem('cabin_code',c);location.reload();}return;}
+    const {records=[]}=await r.json();
+    RAW=records;
+    render();
+  }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst rezervace: ','Could not load bookings: ')+esc(e.message||e)+'</div>';}
+}
+
+function windowStart(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1);}
+function windowEnd(){const s=windowStart();return new Date(s.getFullYear(),s.getMonth()+3,1);}
+function inWindow(rec){const ci=d(rec.fields[F.checkin]);return ci&&ci>=windowStart()&&ci<windowEnd();}
+
+function costOf(f){
+  const party=+f[F.party]||0;
+  const cribs=(f[F.guests]||'').split('\n').filter(Boolean).filter(g=>/crib|postýlka/i.test(g)).length;
+  const beds=Math.max(0,party-cribs);
+  const both=/apartm|Apartment/i.test(sel(f[F.space])||'');
+  return RATES.bed*beds+RATES.util*nights(f)+RATES.house+(both?RATES.apt:0);
+}
+function overlaps(a,b){const a1=d(a[F.checkin]),a2=d(a[F.checkout]),b1=d(b[F.checkin]),b2=d(b[F.checkout]);return a1&&a2&&b1&&b2&&a1<b2&&b1<a2;}
+function calTitle(f){
+  const last=(f[F.bookedBy]||'').trim().split(/\s+/).pop()||f[F.bookedBy]||'';
+  const acct=sel(f[F.payment])&&/Cash|Hotov/i.test(sel(f[F.payment]))?'#cash':(f[F.acct]?'#'+f[F.acct]:'');
+  return `${last} (${f[F.party]||'?'}) ${acct}`.trim();
+}
+
+function render(){
+  // summary
+  const win=RAW.filter(inWindow);
+  const pend=win.filter(x=>stKey(x.fields[F.status])==='req').length;
+  const ok=win.filter(x=>stKey(x.fields[F.status])==='ok').length;
+  document.getElementById('sumrow').innerHTML=`
+    <div class="sum"><div class="n">${win.length}</div><div class="l">${T('Ve výhledu','In window')}</div></div>
+    <div class="sum pend"><div class="n">${pend}</div><div class="l">${T('Čeká','Pending')}</div></div>
+    <div class="sum ok"><div class="n">${ok}</div><div class="l">${T('Schváleno','Approved')}</div></div>`;
+  // filters
+  const F2=[['all',T('Vše','All')],['req',T('Čeká','Pending')],['ok',T('Schváleno','Approved')],['no',T('Zamítnuto','Declined')]];
+  document.getElementById('filters').innerHTML=F2.map(([k,l])=>`<button class="filt ${FILTER===k?'sel':''}" data-f="${k}">${l}</button>`).join('');
+  document.querySelectorAll('.filt').forEach(b=>b.onclick=()=>{FILTER=b.dataset.f;render();});
+
+  let list=RAW.filter(inWindow);
+  // always include a deep-linked booking even if outside window
+  if(HL&&!list.find(x=>x.id===HL)){const extra=RAW.find(x=>x.id===HL);if(extra)list=[extra,...list];}
+  if(FILTER!=='all')list=list.filter(x=>stKey(x.fields[F.status])===FILTER);
+  list.sort((a,b)=>d(a.fields[F.checkin])-d(b.fields[F.checkin]));
+
+  const app=document.getElementById('app');
+  if(!list.length){app.innerHTML=`<div class="empty">${T('Žádné rezervace v tomto výhledu.','No bookings in this window.')}</div>`;return;}
+  const approved=RAW.filter(x=>stKey(x.fields[F.status])==='ok');
+  let html='',curMonth='';
+  list.forEach(x=>{
+    const f=x.fields, mk=monthKey(f[F.checkin]);
+    if(mk!==curMonth){curMonth=mk;html+=`<div class="monthhdr">${monthLabel(mk)}</div>`;}
+    const k=stKey(f[F.status]);
+    const badge=k==='ok'?`<span class="badge ok">✓ ${T('SCHVÁLENO','APPROVED')}</span>`:k==='no'?`<span class="badge no">${T('ZAMÍTNUTO','DECLINED')}</span>`:`<span class="badge req">${T('ČEKÁ','PENDING')}</span>`;
+    const conf=approved.filter(o=>o.id!==x.id&&overlaps(f,o.fields)).map(o=>o.fields[F.bookedBy]);
+    const pay=sel(f[F.payment])||'—';const isCash=/Cash|Hotov/i.test(pay);
+    html+=`<div class="bk ${x.id===HL?'flash':''}" id="bk_${x.id}" data-id="${x.id}">
+      <div class="top">
+        <div><div class="dates">${human(f[F.checkin])} → ${human(f[F.checkout])}</div>
+          <div class="who">${esc(f[F.bookedBy]||'—')} · ${nights(f)} ${T('nocí','nights')}</div></div>
+        ${badge}
+      </div>
+      <div class="meta">
+        <span>🏠 ${esc(/apartm|Apartment/i.test(sel(f[F.space])||'')?T('Dům + apartmán','House + apt'):T('Hlavní dům','Main house'))}</span>
+        <span>👥 ${esc(f[F.party]||'?')}</span>
+        <span class="cost">${'$'+costOf(f).toLocaleString('en-US')}</span>
+        <span>💳 ${isCash?T('hotově','cash'):(f[F.acct]?'#'+esc(f[F.acct]):T('JV účet','JV account'))}</span>
+      </div>
+      ${conf.length?`<div class="conflict">⚠ ${T('Překrývá se se schválenou rezervací','Overlaps an approved booking')}: ${esc(conf.join(', '))}</div>`:''}
+      <details>
+        <summary>${T('Podrobnosti','Details')}</summary>
+        <div class="kv">
+          <span class="k">${T('Hosté','Guests')}</span><span></span></div>
+        <div class="guestbox">${esc(f[F.guests]||'—')}</div>
+        <div class="kv">
+          <span class="k">${T('Účel','Purpose')}</span><span>${esc(sel(f[F.purpose])||'—')}</span>
+          ${f[F.reason]?`<span class="k">${T('Důvod','Reason')}</span><span>${esc(f[F.reason])}</span>`:''}
+          <span class="k">${T('Platba','Payment')}</span><span>${esc(pay)}${f[F.acct]?' · #'+esc(f[F.acct]):''}</span>
+          <span class="k">${T('JV tým','JV team')}</span><span>${esc(f[F.team]||'—')}</span>
+          <span class="k">${T('Kontakt','Contact')}</span><span><a class="mail" href="mailto:${esc(f[F.email]||'')}">${esc(f[F.email]||'—')}</a>${f[F.phone]?' · '+esc(f[F.phone]):''}</span>
+          <span class="k">${T('Pravidla','Rules')}</span><span>${f[F.agreed]?'✓ '+T('podepsáno','signed')+' — '+esc(f[F.signature]||''):'—'}</span>
+          <span class="k">${T('Odesláno','Submitted')}</span><span>${f[F.submitted]?new Date(f[F.submitted]).toLocaleString(locale()):'—'}</span>
+        </div>
+        <div class="caltitle"><code>${esc(calTitle(f))}</code><button type="button" data-copy="${esc(calTitle(f))}">${T('Kopírovat pro kalendář','Copy for calendar')}</button></div>
+      </details>
+      ${k==='req'?`<div class="actions">
+        <button class="btn accept" data-accept="${x.id}">✓ ${T('Přijmout rezervaci','Accept booking')}</button>
+        <button class="btn decline" data-decline="${x.id}">${T('Zamítnout','Decline')}</button>
+      </div>`:k==='ok'?`<div class="actions"><button class="btn decline" data-decline="${x.id}" style="flex:1">${T('Zrušit schválení','Undo approval')}</button></div>`:`<div class="actions"><button class="btn accept" data-accept="${x.id}" style="flex:1">✓ ${T('Přesto přijmout','Accept after all')}</button></div>`}
+    </div>`;
+  });
+  app.innerHTML=html;
+  wire();
+  if(HL){const el=document.getElementById('bk_'+HL);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
+  document.getElementById('foot').textContent=`${T('Okno','Window')}: ${windowStart().toLocaleDateString(locale(),{month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{month:'short',year:'numeric'})}`;
+}
+
+function wire(){
+  document.querySelectorAll('[data-accept]').forEach(b=>b.onclick=()=>setStatus(b.dataset.accept,ST.OK,b));
+  document.querySelectorAll('[data-decline]').forEach(b=>b.onclick=()=>setStatus(b.dataset.decline,ST.NO,b));
+  document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(b.dataset.copy);const t=b.textContent;b.textContent=T('Zkopírováno ✓','Copied ✓');setTimeout(()=>b.textContent=t,1500);});
+}
+async function setStatus(id,status,btn){
+  const rec=RAW.find(x=>x.id===id);if(!rec)return;
+  btn.disabled=true;const t=btn.textContent;btn.textContent='…';
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'bookingStatus',id,status})});
+    const data=await r.json();
+    if(!r.ok)throw new Error((data.error&&data.error.message)||data.error||'Error');
+    rec.fields=Object.assign({},rec.fields,{[F.status]:status});
+    render();
+    if(data.calendar==='created')toast(T('Přidáno do kalendáře Selah ✓','Added to the Selah Calendar ✓'));
+    else if(data.calendar==='removed')toast(T('Odebráno z kalendáře Selah','Removed from the Selah Calendar'));
+    else if(data.calendar&&String(data.calendar).startsWith('error'))toast(T('Uloženo, ale kalendář se nepodařilo aktualizovat.','Saved — but the calendar update failed.'));
+  }catch(e){btn.disabled=false;btn.textContent=t;alert(T('Uložení selhalo: ','Save failed: ')+(e.message||e));}
+}
+let toastT;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2800);}
+
+applyLang();
+load();
+</script>
+</body>
+</html>

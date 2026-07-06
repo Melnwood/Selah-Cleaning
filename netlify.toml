@@ -1,6 +1,6 @@
 [build]
-  publish = "."
-  functions = "functions"
+  publish = "public"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/cleaner"
@@ -17,8 +17,17 @@
   to = "/maintenance.html"
   status = 200
 
-# Old link kept working
 [[redirects]]
   from = "/dashboard"
-  to = "/payments.html"
-  status = 301
+  to = "/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/book"
+  to = "/book.html"
+  status = 200
+
+[[redirects]]
+  from = "/bookings"
+  to = "/bookings.html"
+  status = 200

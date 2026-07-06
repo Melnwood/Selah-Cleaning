@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SELAH · Přehled</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9ede6;--panel:#fff;--panel2:#f5f8f2;--ink:#1b2a22;--soft:#54655a;--line:#d6ddd2;
+  --spruce:#1f3a2e;--pine:#2f5d4a;--pine2:#3c7359;--amber:#a56c15;--amberbg:#f5ead2;
+  --barn:#a2372a;--barnbg:#f4ddd6;--done:#2f6b4c;--prog:#b07d12;--open:#a2372a;--wont:#7c877e;--gold:#c6a24a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.45}
+.wrap{max-width:820px;margin:0 auto;padding:0 16px 80px}
+.en-only{display:none}
+body.lang-en .en-only{display:inline}
+body.lang-en .cs-only{display:none}
+.langtog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;flex:none}
+.langtog button{font:inherit;font-weight:700;font-size:12px;padding:6px 12px;border:0;background:transparent;color:var(--soft);cursor:pointer}
+.langtog button.on{background:var(--spruce);color:#fff}
+header{padding:18px 0 8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.brand{display:flex;align-items:center;gap:10px}
+.roof{width:26px;height:26px;flex:none}
+.roof path{fill:none;stroke:var(--spruce);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.mark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:11px;letter-spacing:.24em;color:var(--amber);line-height:1;margin-bottom:4px}
+.brand h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:19px;margin:0;line-height:1.1}
+.brand .sub{font-size:12px;color:var(--soft);margin-top:3px}
+.brand .txt{flex:1;min-width:0}
+.periods{display:flex;gap:6px;margin:14px 0 2px;overflow-x:auto}
+.period{font:inherit;font-weight:600;font-size:13px;white-space:nowrap;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--soft);cursor:pointer}
+.period.sel{background:var(--spruce);border-color:var(--spruce);color:#fff}
+
+/* Headline KPIs */
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
+@media(max-width:520px){.kpis{grid-template-columns:1fr;}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;cursor:pointer;text-align:left;font:inherit;color:inherit;position:relative;transition:border-color .12s,transform .12s}
+.kpi:hover{border-color:var(--pine2);transform:translateY(-1px)}
+.kpi .num{font-family:'Space Mono',monospace;font-weight:700;font-size:27px;line-height:1}
+.kpi .lbl{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-top:6px}
+.kpi .go{position:absolute;top:13px;right:14px;color:var(--pine2);font-size:14px;opacity:.5}
+.kpi.rent .num{color:var(--pine)} .kpi.wo .num{color:var(--open)} .kpi.fine .num{color:var(--barn)}
+
+/* Accordion sections */
+.acc{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin:12px 0;overflow:hidden}
+.acc.open{border-color:var(--pine2)}
+.acc-head{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel);border:0;font:inherit;color:var(--ink);padding:16px;cursor:pointer}
+.acc.open .acc-head{border-bottom:1px solid var(--line);background:var(--panel2)}
+.acc-head .chev{width:15px;height:15px;flex:none;transition:transform .18s}
+.acc.open .acc-head .chev{transform:rotate(90deg)}
+.acc-head .chev path{stroke:var(--pine);stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.acc-head .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:15px}
+.acc-head .ico.c{background:#eaf1ec}.acc-head .ico.m{background:var(--barnbg)}.acc-head .ico.p{background:var(--amberbg)}.acc-head .ico.u{background:#e6eef5}
+.acc-head .h{flex:1;min-width:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px}
+.acc-head .badge{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:#eef1ec;color:var(--soft);white-space:nowrap}
+.acc-head .badge.warn{background:var(--barnbg);color:var(--barn)}
+.acc-body{padding:14px 16px 16px}
+.acc-body[hidden]{display:none}
+
+.mini{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ministat{flex:1;min-width:96px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+.ministat .n{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;line-height:1}
+.ministat .l{font-size:10.5px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.ministat .n.pay{color:var(--amber)} .ministat .n.barn{color:var(--barn)} .ministat .n.done{color:var(--done)} .ministat .n.prog{color:var(--prog)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--soft);font-weight:600;padding:0 8px 8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;font-family:'Space Mono',monospace}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--panel2)}
+.mo{font-weight:600} .pay{color:var(--amber);font-weight:700} .fine{color:var(--barn);font-weight:700}
+.chip2{display:inline-block;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+.c-open{background:var(--barnbg);color:var(--open)} .c-prog{background:#f6ecd2;color:var(--prog)} .c-done{background:#dbeee0;color:var(--done)} .c-wont{background:#e7ebe7;color:var(--wont)}
+
+.wolist{display:flex;flex-direction:column;gap:8px}
+.woitem{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;background:#fff}
+.woitem:hover{border-color:var(--pine2)}
+.woitem .ref{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--pine2);flex:none}
+.woitem .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.woitem .age{font-family:'Space Mono',monospace;font-size:12px;color:var(--soft);white-space:nowrap;flex:none}
+.woitem .age.old{color:var(--barn);font-weight:700}
+
+.rentlist{display:flex;flex-direction:column;gap:8px}
+.rent{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:#fff}
+.rent .when{font-family:'Space Mono',monospace;font-size:12px;color:var(--soft);flex:none;width:96px}
+.rent .nm{flex:1;min-width:0;font-weight:600;font-size:14px}
+.rent .clean{font-family:'Space Mono',monospace;font-size:11.5px;color:var(--pine2);white-space:nowrap;flex:none}
+.notice{font-size:12.5px;color:var(--soft);background:var(--panel2);border:1px dashed var(--line);border-radius:11px;padding:11px 12px}
+
+.card2{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin:9px 0;cursor:pointer}
+.card2:hover{border-color:var(--pine2)}
+.card2 .r1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.card2 .d{font-weight:700;font-size:14px}
+.card2 .amt{font-family:'Space Mono',monospace;font-weight:700;font-size:14px;color:var(--amber);white-space:nowrap}
+.card2 .meta{font-size:12px;color:var(--soft);margin-top:3px}
+.paidpill{font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:#dbeee0;color:var(--done)}
+.unpaidpill{font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--barnbg);color:var(--barn)}
+.empty{color:var(--soft);font-size:13px;text-align:center;padding:16px}
+.loading{text-align:center;color:var(--soft);padding:48px}
+.err{background:var(--barnbg);border:1px solid var(--barn);color:#7a281d;border-radius:12px;padding:14px;margin:14px 0}
+.foot{font-size:11.5px;color:var(--soft);margin-top:18px;text-align:center}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(20,30,24,.45);display:none;align-items:flex-end;justify-content:center}
+.modal.show{display:flex}
+@media(min-width:640px){.modal{align-items:center}}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
+@media(min-width:640px){.sheet{border-radius:18px}}
+.sheethead{position:sticky;top:0;background:var(--bg);display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);z-index:2}
+.sheethead .back{font:inherit;font-weight:600;font-size:13px;color:var(--pine2);background:none;border:0;cursor:pointer;padding:4px 0}
+.sheethead .title{flex:1;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px}
+.sheethead .close{font:inherit;font-size:20px;color:var(--soft);background:none;border:0;cursor:pointer;line-height:1;padding:0 4px}
+.sheetbody{padding:14px 16px 24px}
+.detail .grp{font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 2px}
+.detail .line{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.detail .line:last-child{border-bottom:0}
+.detail .line .v{font-family:'Space Mono',monospace;white-space:nowrap}
+.detail .line.tot{border-top:1px solid var(--ink);border-bottom:0;margin-top:4px;padding-top:9px;font-weight:700}
+.detail .line.tot .v{color:var(--amber)}
+.detail .sec{margin-top:14px}
+.detail .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--pine);margin-bottom:7px}
+.detail .box{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px;font-size:14px;white-space:pre-wrap}
+.detail .finebox{background:var(--barnbg);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--barn);margin-top:8px}
+.tl-item{position:relative;padding:0 0 10px 18px;font-size:13px}
+.tl-item::before{content:"";position:absolute;left:4px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--pine2)}
+.tl-item::after{content:"";position:absolute;left:7px;top:13px;bottom:0;width:2px;background:var(--line)}
+.tl-item:last-child::after{display:none}
+.tl-item .d{font-family:'Space Mono',monospace;font-size:11px;color:var(--soft)}
+.tl-item .au{font-weight:700}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px;margin:6px 0}
+.kv .k{color:var(--soft)}
+button:focus-visible,.woitem:focus-visible,.card2:focus-visible{outline:2px solid var(--pine2);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
+      <div class="txt">
+        <div class="mark">SELAH</div>
+        <h1><span class="cs-only">Manažerský přehled</span><span class="en-only">Executive dashboard</span></h1>
+        <div class="sub"><span class="cs-only">Klepněte na sekci nebo položku pro detail</span><span class="en-only">Tap a section or item to drill in</span></div>
+      </div>
+      <div class="langtog" role="group" aria-label="Jazyk / Language">
+        <button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button>
+      </div>
+    </div>
+    <div class="periods" id="periods"></div>
+  </header>
+  <div id="app"><div class="loading">…</div></div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="sheet">
+    <div class="sheethead">
+      <button class="back" id="mBack" style="display:none">← <span class="cs-only">Zpět</span><span class="en-only">Back</span></button>
+      <div class="title" id="mTitle"></div>
+      <button class="close" id="mClose" aria-label="Close">✕</button>
+    </div>
+    <div class="sheetbody" id="mBody"></div>
+  </div>
+</div>
+
+<script>
+const API='/.netlify/functions/airtable';
+const F={totalOwed:'fldGgWLyyZlV3jlyd',fines:'fldmHlIAzb6WgVnMV',cleaner:'fldlPGZHTcOIL4DvO',
+  name:'fld9Kt1M6dPmb5dSC',notes:'flddOS4VpM1ZNFkdx',needsFixing:'fld1tdDipneoCHk5Z',fixNotes:'fld0ySTAz7IwQ6gys',
+  startAt:'fldy5fzkRiO3WQgd9',mStatus:'fld1XHyJRgSstFmxO',priority:'fldoCrKTXVRW1UX5J',assigned:'fldeaalnwAPlZZ5XP',
+  resolvedDate:'fldPq2vqWietaxfgq',resolutionNotes:'fld6ypazIXO4JuPc0',updates:'fldW1sJZ0OW1jRpXq',
+  paid:'fld538RLNod1CACIs',paidDate:'fldPdR5KbBlFkpsTS',repairOnly:'fld5vuhp9PnESnelw',renter:'fldesBx0AyJOhxrns'};
+const BASE_FEE=200;
+const ROOMS=[
+ {cs:'Hlavní dům',en:'Main house',items:[
+  ['fldMfuX5Tv1rnqTsC','Kuchyň (přízemí)','Kitchen (ground)',200],['fldetbVLqJiR7BUxz','Obývací pokoj (přízemí)','Living room (ground)',150],
+  ['fldrhmNigOJzOTvfz','Zadní místnost a vstup','Back room & entry',130],['fldKilqRocintHJMd','Koupelna (přízemí)','Bathroom (ground)',75],
+  ['fldg4cahU5x8uQ3In','Hlavní ložnice','Master bedroom',100],['fldwlRDk85Q3vRz7J','Hlavní koupelna','Master bathroom',70],
+  ['fldbhVlH80EYpZiUr','Pokoj s manželskou postelí','Queen bedroom',100],['fldi3syW5r77F3BXm','Pokoj s palandami','Bunk-beds bedroom',100],
+  ['fldCSRxxXFceyGNwb','Koupelna na chodbě (horní patro)','Hallway bathroom (upstairs)',70]]},
+ {cs:'Okna hlavního domu',en:'Main-house windows',items:[
+  ['fldg3eVFJ59uh3PV1','Okna kuchyň & obývací pokoj (3)','Kitchen & living windows (3)',225],['fldGqog2FArKZ1f7o','Francouzské dveře (2)','French doors (2)',8],
+  ['fldv2dmuYke76vRyW','Okna zadní místnost a vstup (2)','Back room & entry windows (2)',135],['fld3fvt0E46yaizGq','Okno koupelna (1)','Bathroom window (1)',45],
+  ['fldqJGrNKqqD8UQ8B','Okna hlavní ložnice (3 + dveře)','Master windows (3 + door)',180],['fldHRPb6ud46U8TgR','Okno hlavní koupelny (2)','Master bath window (2)',90],
+  ['fldn2VzncODj06Rz1','Okno pokoje s manželskou postelí (1)','Queen window (1)',45],['fldHs9u66iXfSzH8u','Okna pokoje s palandami (2)','Bunk-beds windows (2)',90],
+  ['fldSMaF1nCqZNkWh9','Okno koupelny na chodbě (1)','Hallway bath window (1)',45],['fldNmQWL9OSd3ZZwE','Okno na schodišti (1)','Stair window (1)',45]]},
+ {cs:'Apartmán',en:'Apartment',items:[
+  ['fld0GbY18NMS2iZBD','Apartmán','Apartment',140],['fldRYJ8tJASnKp64G','Koupelna v apartmánu','Apartment bathroom',70],['fld4mIbs62ksmPoVr','Okna apartmánu (4)','Apartment windows (4)',225]]}
+];
+const STATUS={OPEN:'Nové (Open)',PROG:'Probíhá (In Progress)',DONE:'Vyřešeno (Resolved)',WONT:'Neopravovat (Won\u2019t Fix)'};
+let RAW=[],UPCOMING=[],RENT_ERR=null,PERIOD='year';
+let LANG=localStorage.getItem('cabin_lang')||'cs';
+const OPEN_SEC={cleaning:true,maintenance:true,payment:true,upcoming:true};
+function T(cs,en){return LANG==='en'?en:cs;}
+function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
+function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
+function promptCode(){const c=prompt(T('Zadejte přístupový kód','Enter access code'));if(c){localStorage.setItem('cabin_code',c);location.reload();}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function selName(v){return v&&typeof v==='object'?v.name:v;}
+function money(v){const n=parseInt(String(v||'').replace(/[^\d-]/g,''),10);return isNaN(n)?0:n;}
+function kc(n){return n.toLocaleString(locale())+' Kč';}
+function dstr(d,opts){return d?new Date(d).toLocaleDateString(locale(),opts||{day:'numeric',month:'short',year:'numeric'}):'—';}
+function isCleaning(f){return !f[F.repairOnly];}
+function isWO(f){return selName(f[F.needsFixing])==='Yes';}
+function statusOf(f){return selName(f[F.mStatus])||STATUS.OPEN;}
+function statusKey(s){if(!s)return 'open';if(s.startsWith('Prob'))return 'prog';if(s.startsWith('Vyře'))return 'done';if(s.startsWith('Neop'))return 'wont';return 'open';}
+function optLabel(s){if(!s)return '';const m=String(s).match(/^(.*?)\s*\((.*)\)\s*$/);if(!m)return s;return LANG==='en'?m[2]:m[1];}
+function daysBetween(a,b){return Math.max(0,Math.round((new Date(b)-new Date(a))/86400000));}
+function daysWord(n){if(LANG==='en')return n===1?'day':'days';return n===1?'den':(n>=2&&n<=4?'dny':'dní');}
+function whenOf(x){return x.fields[F.startAt]||x.createdTime;}
+function byId(id){return RAW.find(x=>x.id===id);}
+function monthKey(x){const d=new Date(whenOf(x));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function monthLabel(k){const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString(locale(),{month:'long',year:'numeric'});}
+function inPeriod(d){
+  if(!d)return PERIOD==='all';const dt=new Date(d),now=new Date();
+  if(PERIOD==='all')return true;
+  if(PERIOD==='month')return dt.getFullYear()===now.getFullYear()&&dt.getMonth()===now.getMonth();
+  if(PERIOD==='year')return dt.getFullYear()===now.getFullYear();
+  if(PERIOD==='3m'){const c=new Date(now);c.setMonth(c.getMonth()-3);return dt>=c;}
+  return true;
+}
+function periodName(){return {month:T('tento měsíc','this month'),'3m':T('3 měsíce','3 months'),year:T('tento rok','this year'),all:T('celkem','all time')}[PERIOD];}
+
+function applyLang(){
+  document.body.classList.toggle('lang-en',LANG==='en');document.documentElement.lang=LANG;
+  document.getElementById('btnCs').classList.toggle('on',LANG==='cs');
+  document.getElementById('btnEn').classList.toggle('on',LANG==='en');
+  if(RAW.length||document.getElementById('periods').children.length)render();
+}
+document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+
+async function load(){
+  document.getElementById('app').innerHTML='<div class="loading">'+T('Načítám…','Loading…')+'</div>';
+  try{
+    const r=await fetch(API,{headers:hdr()});
+    if(r.status===401){promptCode();return;}
+    const {records=[]}=await r.json();
+    RAW=records.sort((a,b)=>new Date(whenOf(b))-new Date(whenOf(a)));
+    render();
+  }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst data: ','Could not load data: ')+esc(e.message||e)+'</div>';}
+}
+async function loadRentals(){
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'rentals',days:30})});
+    const data=await r.json();
+    RENT_ERR=data.error||null;
+    UPCOMING=(data.rentals||[]).map(cleanRental).filter(Boolean).sort((a,b)=>a.end<b.end?-1:1);
+  }catch(e){RENT_ERR='fetch';UPCOMING=[];}
+  if(RAW.length)render();
+}
+const SKIP=/^(blocked|booked|book d|massage|selah deep clean|selah billing|get ?meds|mel.s meds|mel’s meds)/i;
+function cleanRental(ev){
+  const sum=(ev.summary||'').trim();if(!sum||SKIP.test(sum))return null;
+  const start=(ev.start&&(ev.start.date||ev.start.dateTime))||ev.start;
+  const end=(ev.end&&(ev.end.date||ev.end.dateTime))||ev.end;
+  if(!start||!end)return null;
+  const name=sum.split('#')[0].trim();
+  return {name,start:String(start).slice(0,10),end:String(end).slice(0,10)};
+}
+
+// ---- metrics ----
+function cleaningsIn(){return RAW.filter(x=>isCleaning(x.fields)&&inPeriod(whenOf(x)));}
+function workOrders(){return RAW.filter(x=>isWO(x.fields));}
+function openWOs(){return workOrders().filter(x=>{const k=statusKey(statusOf(x.fields));return k==='open'||k==='prog';}).sort((a,b)=>new Date(whenOf(a))-new Date(whenOf(b)));}
+function resolvedWOs(){return workOrders().filter(x=>statusKey(statusOf(x.fields))==='done'&&x.fields[F.resolvedDate]);}
+function fixDays(x){return daysBetween(whenOf(x),x.fields[F.resolvedDate]);}
+function avgFix(){const r=resolvedWOs();if(!r.length)return null;return r.reduce((s,x)=>s+fixDays(x),0)/r.length;}
+
+function render(){
+  const PERIODS=[['month',T('Tento měsíc','This month')],['3m',T('3 měsíce','3 months')],['year',T('Tento rok','This year')],['all',T('Vše','All')]];
+  document.getElementById('periods').innerHTML=PERIODS.map(([k,l])=>`<button class="period ${PERIOD===k?'sel':''}" data-p="${k}">${l}</button>`).join('');
+  document.querySelectorAll('.period').forEach(b=>b.onclick=()=>{PERIOD=b.dataset.p;render();});
+
+  const cl=cleaningsIn();
+  let pay=0,fines=0;cl.forEach(x=>{pay+=money(x.fields[F.totalOwed]);fines+=(x.fields[F.fines]||0);});
+  const ow=openWOs();const avg=avgFix();
+  const unpaidAll=RAW.filter(x=>isCleaning(x.fields)&&!x.fields[F.paid]);
+  const owed=unpaidAll.reduce((s,x)=>s+money(x.fields[F.totalOwed]),0);
+  const paidTotal=RAW.filter(x=>isCleaning(x.fields)&&x.fields[F.paid]).reduce((s,x)=>s+money(x.fields[F.totalOwed]),0);
+  const c=counts();
+
+  const app=document.getElementById('app');
+  app.innerHTML=`
+  <div class="kpis">
+    <button class="kpi rent" data-open="list" data-kind="cleanings"><span class="go">↗</span><div class="num">${cl.length}</div><div class="lbl">${T('Pronájmy','Rentals')}</div></button>
+    <button class="kpi wo" data-open="list" data-kind="open"><span class="go">↗</span><div class="num">${ow.length}</div><div class="lbl">${T('Zakázky','Work orders')}</div></button>
+  </div>
+
+  ${section('upcoming','u','📅',T('Nadcházející pronájmy','Upcoming rentals'),UPCOMING.length,false,upcomingBody())}
+
+  ${section('cleaning','c','🧹',T('Úklidy','Cleaning'),cl.length,false,`
+    <div class="mini">
+      <div class="ministat"><div class="n">${cl.length}</div><div class="l">${T('Úklidy','Cleanings')}</div></div>
+      <div class="ministat"><div class="n pay">${kc(pay)}</div><div class="l">${T('Odměna uklízeči','Cleaner pay')}</div></div>
+    </div>
+    ${monthTable()}`)}
+
+  ${section('maintenance','m','🔧',T('Údržba','Maintenance'),ow.length,ow.length>0,`
+    <div class="mini">
+      <div class="ministat"><div class="n barn">${c.open}</div><div class="l">${T('Nové','Open')}</div></div>
+      <div class="ministat"><div class="n prog">${c.prog}</div><div class="l">${T('Probíhá','In progress')}</div></div>
+      <div class="ministat"><div class="n done">${c.done}</div><div class="l">${T('Vyřešeno','Resolved')}</div></div>
+      <div class="ministat"><div class="n">${avg==null?'—':(Math.round(avg*10)/10)+' '+daysWord(Math.round(avg))}</div><div class="l">${T('Průměr do opravy','Avg time to fix')}</div></div>
+    </div>
+    ${woPanel(ow)}`)}
+
+  ${section('payment','p','💰',T('Platby','Payment'),owed?kc(owed):'0',owed>0,`
+    <div class="mini">
+      <div class="ministat"><div class="n barn">${kc(owed)}</div><div class="l">${T('Zbývá zaplatit','Owed')}</div></div>
+      <div class="ministat"><div class="n done">${kc(paidTotal)}</div><div class="l">${T('Zaplaceno','Paid')}</div></div>
+      <div class="ministat"><div class="n">${unpaidAll.length}</div><div class="l">${T('Nezaplacené úklidy','Unpaid cleanings')}</div></div>
+      <div class="ministat"><div class="n barn">${fines?kc(fines):'0 Kč'}</div><div class="l">${T('Pokuty hostům','Guest fines')}</div></div>
+    </div>
+    ${unpaidAll.length?('<div style="font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 6px">'+T('Nezaplaceno — od nejstaršího','Unpaid — oldest first')+'</div>'+[...unpaidAll].sort((a,b)=>new Date(whenOf(a))-new Date(whenOf(b))).map(cleaningCard).join('')):('<div class="empty">'+T('Vše zaplaceno. 🎉','All paid. 🎉')+'</div>')}`)}
+  `;
+
+  // wire accordions
+  document.querySelectorAll('.acc-head').forEach(h=>h.onclick=()=>{const acc=h.closest('.acc');const sec=acc.dataset.sec;OPEN_SEC[sec]=!acc.classList.contains('open');acc.classList.toggle('open');acc.querySelector('.acc-body').hidden=!OPEN_SEC[sec];});
+  // period + drill handled via delegation
+  const oldest=RAW.reduce((m,x)=>{const d=whenOf(x);return (!m||d<m)?d:m;},null);
+  document.getElementById('foot').textContent=`${T('Období','Period')}: ${periodName()} · ${RAW.length} ${T('záznamů','records')}`;
+}
+
+function section(key,ico,emoji,title,badge,warn,body){
+  const open=OPEN_SEC[key];
+  return `<div class="acc ${open?'open':''}" data-sec="${key}">
+    <button class="acc-head" type="button">
+      <svg class="chev" viewBox="0 0 16 16"><path d="M6 3 L11 8 L6 13"/></svg>
+      <span class="ico ${ico}">${emoji}</span>
+      <span class="h">${title}</span>
+      <span class="badge ${warn?'warn':''}">${badge}</span>
+    </button>
+    <div class="acc-body" ${open?'':'hidden'}>${body}</div>
+  </div>`;
+}
+function counts(){const c={open:0,prog:0,done:0,wont:0};workOrders().forEach(x=>c[statusKey(statusOf(x.fields))]++);return c;}
+
+function monthTable(){
+  const cl=cleaningsIn();
+  if(!cl.length)return `<div class="empty">${T('Žádné úklidy v tomto období.','No cleanings in this period.')}</div>`;
+  const g={};cl.forEach(x=>{const k=monthKey(x);(g[k]=g[k]||{n:0,pay:0,fine:0,unpaid:0});g[k].n++;g[k].pay+=money(x.fields[F.totalOwed]);g[k].fine+=(x.fields[F.fines]||0);if(!x.fields[F.paid])g[k].unpaid+=money(x.fields[F.totalOwed]);});
+  const keys=Object.keys(g).sort().reverse();
+  return `<table><thead><tr><th>${T('Měsíc','Month')}</th><th class="n">${T('Úklidy','Cleanings')}</th><th class="n">${T('Odměna','Pay')}</th><th class="n">${T('Pokuty','Fines')}</th></tr></thead><tbody>${
+    keys.map(k=>`<tr class="click" data-open="month" data-key="${k}"><td class="mo">${monthLabel(k)}</td><td class="n">${g[k].n}</td><td class="n pay">${kc(g[k].pay)}</td><td class="n ${g[k].fine?'fine':''}">${g[k].fine?kc(g[k].fine):'—'}</td></tr>`).join('')
+  }</tbody></table>`;
+}
+function woPanel(list){
+  if(!list.length)return `<div class="empty">${T('Žádné otevřené zakázky. 🌲','No open work orders. 🌲')}</div>`;
+  const now=new Date();
+  return `<div class="wolist">${list.map(x=>{const age=daysBetween(whenOf(x),now);const k=statusKey(statusOf(x.fields));
+    return `<div class="woitem" data-open="wo" data-id="${x.id}" tabindex="0"><span class="ref">${woRef(x.id)}</span><span class="chip2 c-${k}">${esc(optLabel(statusOf(x.fields)).toUpperCase())}</span><span class="txt">${esc(x.fields[F.fixNotes]||'—')}</span><span class="age ${age>=14?'old':''}">${age} ${daysWord(age)}</span></div>`;}).join('')}</div>`;
+}
+function woRef(id){return '#'+String(id).slice(-4).toUpperCase();}
+
+function upcomingBody(){
+  if(RENT_ERR==='no_calendar'||RENT_ERR==='no_key')
+    return `<div class="notice">📅 ${T('Nadcházející pronájmy se zobrazí, jakmile bude připojen kalendář „04 Selah".','Upcoming rentals will appear once the “04 Selah” calendar is connected.')}</div>`;
+  if(!UPCOMING.length)return `<div class="empty">${T('Žádné pronájmy v příštích 30 dnech.','No rentals in the next 30 days.')}</div>`;
+  const MON=["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fmt=s=>{const d=new Date(s);return MON[d.getMonth()+1]+' '+d.getDate();};
+  return `<div class="rentlist">${UPCOMING.map(r=>`<div class="rent"><span class="when">${fmt(r.start)} – ${fmt(r.end)}</span><span class="nm">${esc(r.name)}</span><span class="clean">🧹 ${fmt(r.end)}</span></div>`).join('')}</div>
+   <div style="font-size:11px;color:var(--soft);margin-top:8px">${T('🧹 = předpokládaný den úklidu (den odjezdu)','🧹 = expected cleaning day (checkout)')}</div>`;
+}
+
+// ---- modal / drill-down ----
+let stack=[];
+function paint(){const v=stack[stack.length-1];document.getElementById('mTitle').textContent=v.title();document.getElementById('mBody').innerHTML=v.body();document.getElementById('mBack').style.display=stack.length>1?'':'none';document.getElementById('modal').classList.add('show');}
+function push(v){stack.push(v);paint();}
+function back(){stack.pop();if(!stack.length)closeM();else paint();}
+function closeM(){stack=[];document.getElementById('modal').classList.remove('show');}
+function empty(){return `<div class="empty">${T('Nic k zobrazení.','Nothing to show.')}</div>`;}
+
+function listView(kind){
+  const titles={cleanings:T('Pronájmy / úklidy','Rentals / cleanings'),fines:T('Pokuty hostům','Guest fines'),open:T('Otevřené zakázky','Open work orders')};
+  return {title:()=>titles[kind]||'',body:()=>{
+    if(kind==='open'){const l=openWOs();return l.length?l.map(woCard).join(''):empty();}
+    let l=cleaningsIn();
+    if(kind==='fines')l=l.filter(x=>(x.fields[F.fines]||0)>0);
+    return l.length?l.map(cleaningCard).join(''):empty();
+  }};
+}
+function cleaningCard(x){
+  const f=x.fields;const paid=!!f[F.paid];const renter=f[F.renter]||'';
+  return `<div class="card2" data-open="cleaning" data-id="${x.id}">
+    <div class="r1"><span><span class="d">${dstr(whenOf(x))}</span>${renter?` · <b>${esc(renter)}</b>`:''}</span><span class="amt">${kc(money(f[F.totalOwed]))}</span></div>
+    <div class="meta">🧹 ${esc(f[F.cleaner]||'—')} · ${paid?`<span class="paidpill">✓ ${T('zaplaceno','paid')} ${f[F.paidDate]?dstr(f[F.paidDate]):''}</span>`:`<span class="unpaidpill">${T('nezaplaceno','unpaid')}</span>`}${(f[F.fines]||0)?` · <span class="fine">${T('pokuty','fines')} ${kc(f[F.fines])}</span>`:''}</div>
+  </div>`;
+}
+function woCard(x){
+  const f=x.fields;const k=statusKey(statusOf(f));const now=new Date();const age=daysBetween(whenOf(x),now);
+  return `<div class="card2" data-open="wo" data-id="${x.id}">
+    <div class="r1"><span><span style="font-family:'Space Mono',monospace;color:var(--pine2);font-weight:700">${woRef(x.id)}</span> <span class="chip2 c-${k}">${esc(optLabel(statusOf(f)).toUpperCase())}</span></span><span style="font-family:'Space Mono',monospace;font-size:12px;color:${age>=14?'var(--barn)':'var(--soft)'}">${T('otevřeno','open')} ${age} ${daysWord(age)}</span></div>
+    <div class="meta" style="margin-top:6px;color:var(--ink);font-size:13.5px">${esc(f[F.fixNotes]||'—')}</div>
+    <div class="meta">${T('Nahlásil/a','Reported by')} ${esc(f[F.cleaner]||'—')} · ${dstr(whenOf(x))}${f[F.assigned]?' · 👤 '+esc(f[F.assigned]):''}</div>
+  </div>`;
+}
+function cleaningView(id){
+  return {title:()=>T('Úklid','Cleaning'),body:()=>{
+    const x=byId(id);if(!x)return empty();const f=x.fields;
+    let html='';ROOMS.forEach(grp=>{const done=grp.items.filter(([rid])=>f[rid]===true);if(!done.length)return;
+      html+=`<div class="grp">${T(grp.cs,grp.en)}</div>`;done.forEach(([rid,cs,en,price])=>{html+=`<div class="line"><span>${esc(T(cs,en))}</span><span class="v">${price} Kč</span></div>`;});});
+    html+=`<div class="line"><span>${T('Základní poplatek','Base fee')}</span><span class="v">${BASE_FEE} Kč</span></div>`;
+    html+=`<div class="line tot"><span>${T('Odměna celkem','Pay total')}</span><span class="v">${kc(money(f[F.totalOwed]))}</span></div>`;
+    const paid=!!f[F.paid];const fine=f[F.fines]||0;const notes=f[F.notes]||'';
+    return `<div class="detail">
+      <div class="kv"><span class="k">${T('Datum','Date')}</span><span>${dstr(whenOf(x))}</span>
+        ${f[F.renter]?`<span class="k">${T('Hosté','Guest')}</span><span><b>${esc(f[F.renter])}</b></span>`:''}
+        <span class="k">${T('Uklízeč','Cleaner')}</span><span>${esc(f[F.cleaner]||'—')}</span>
+        <span class="k">${T('Platba','Payment')}</span><span>${paid?'✓ '+T('zaplaceno','paid')+(f[F.paidDate]?' '+dstr(f[F.paidDate]):''):'— '+T('nezaplaceno','unpaid')}</span></div>
+      <div class="sec"><div class="st">${T('Co bylo uklizeno','What was cleaned')}</div>${html}</div>
+      ${fine?`<div class="finebox">${T('Pokuty hostům za tento pobyt','Guest fines for this stay')}: <b>${kc(fine)}</b> — ${T('účtováno hostům.','charged to guests.')}</div>`:''}
+      ${notes?`<div class="sec"><div class="st">${T('Poznámky','Notes')}</div><div class="box">${esc(notes)}</div></div>`:''}
+    </div>`;
+  }};
+}
+function woView(id){
+  return {title:()=>T('Zakázka','Work order')+' '+woRef(id),body:()=>{
+    const x=byId(id);if(!x)return empty();const f=x.fields;const k=statusKey(statusOf(f));const now=new Date();
+    const done=k==='done'&&f[F.resolvedDate];
+    const durLine=done?`${T('Opraveno za','Fixed in')} <b>${fixDays(x)} ${daysWord(fixDays(x))}</b> (${dstr(whenOf(x))} → ${dstr(f[F.resolvedDate])})`
+      :`${T('Otevřeno','Open for')} <b>${daysBetween(whenOf(x),now)} ${daysWord(daysBetween(whenOf(x),now))}</b> (${T('od','since')} ${dstr(whenOf(x))})`;
+    const ups=String(f[F.updates]||'').split('\n').map(s=>s.trim()).filter(Boolean).map(line=>{const m=line.match(/^(\S+)\s+·\s+(.+?)\s+—\s+(.*)$/);if(m)return{date:m[1],name:m[2],body:m[3]};const m2=line.match(/^(\S+)\s+—\s+(.*)$/);return m2?{date:m2[1],name:'',body:m2[2]}:{date:'',name:'',body:line};});
+    return `<div class="detail">
+      <div class="kv">
+        <span class="k">${T('Stav','Status')}</span><span><span class="chip2 c-${k}">${esc(optLabel(statusOf(f)).toUpperCase())}</span></span>
+        <span class="k">${T('Priorita','Priority')}</span><span>${esc(optLabel(selName(f[F.priority]))||'—')}</span>
+        <span class="k">${T('Nahlásil/a','Reported by')}</span><span>${esc(f[F.cleaner]||'—')} · ${dstr(whenOf(x))}</span>
+        <span class="k">${T('Přiděleno','Assigned to')}</span><span>${esc(f[F.assigned]||'—')}</span></div>
+      <div class="box" style="margin-top:10px">${durLine}</div>
+      <div class="sec"><div class="st">${T('Popis závady','Reported problem')}</div><div class="box">${esc(f[F.fixNotes]||'—')}</div></div>
+      ${f[F.resolutionNotes]?`<div class="sec"><div class="st">${T('Co bylo opraveno','What was repaired')}</div><div class="box">${esc(f[F.resolutionNotes])}</div></div>`:''}
+      <div class="sec"><div class="st">${T('Průběh','Updates')}</div>${ups.length?ups.map(u=>`<div class="tl-item">${u.date?`<span class="d">${esc(u.date)}</span> `:''}${u.name?`<span class="au">${esc(u.name)}</span> · `:''}${esc(u.body)}</div>`).join(''):`<div class="empty" style="text-align:left;padding:0">${T('Zatím žádné aktualizace.','No updates yet.')}</div>`}</div>
+    </div>`;
+  }};
+}
+function monthView(key){
+  return {title:()=>monthLabel(key),body:()=>{
+    const cl=RAW.filter(x=>isCleaning(x.fields)&&monthKey(x)===key).sort((a,b)=>new Date(whenOf(b))-new Date(whenOf(a)));
+    const wos=RAW.filter(x=>isWO(x.fields)&&monthKey(x)===key);
+    let pay=0,fine=0,unpaid=0;cl.forEach(x=>{pay+=money(x.fields[F.totalOwed]);fine+=(x.fields[F.fines]||0);if(!x.fields[F.paid])unpaid+=money(x.fields[F.totalOwed]);});
+    return `<div class="detail">
+      <div class="kv">
+        <span class="k">${T('Úklidy','Cleanings')}</span><span>${cl.length}</span>
+        <span class="k">${T('Odměna celkem','Total pay')}</span><span class="pay">${kc(pay)}</span>
+        <span class="k">${T('Nezaplaceno','Unpaid')}</span><span class="${unpaid?'fine':''}">${unpaid?kc(unpaid):'—'}</span>
+        <span class="k">${T('Pokuty hostům','Guest fines')}</span><span class="${fine?'fine':''}">${fine?kc(fine):'—'}</span></div>
+      <div class="sec"><div class="st">${T('Úklidy v měsíci','Cleanings this month')}</div>${cl.length?cl.map(cleaningCard).join(''):empty()}</div>
+      ${wos.length?`<div class="sec"><div class="st">${T('Nahlášené opravy','Repairs reported')}</div>${wos.map(woCard).join('')}</div>`:''}
+    </div>`;
+  }};
+}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-open]');
+  if(t){const o=t.dataset.open;
+    if(o==='list'){stack=[listView(t.dataset.kind)];paint();}
+    else if(o==='cleaning')push(cleaningView(t.dataset.id));
+    else if(o==='wo')push(woView(t.dataset.id));
+    else if(o==='month'){stack=[monthView(t.dataset.key)];paint();}
+    return;}
+  if(e.target.id==='modal')closeM();
+});
+document.getElementById('mBack').onclick=back;
+document.getElementById('mClose').onclick=closeM;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM();if((e.key==='Enter'||e.key===' ')&&document.activeElement&&document.activeElement.classList.contains('woitem')){e.preventDefault();document.activeElement.click();}});
+
+applyLang();
+load();
+loadRentals();
+</script>
+</body>
+</html>
