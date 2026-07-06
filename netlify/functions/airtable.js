@@ -277,9 +277,11 @@ async function selahEvents(timeMin, timeMax) {
 // ---- Upcoming rentals from the "04 Selah Calendar" ----
 async function rentals(body) {
   const days = Math.min(120, Math.max(1, parseInt(body.days, 10) || 30));
+  const back = Math.min(60, Math.max(0, parseInt(body.back, 10) || 0));
   const now = new Date();
+  const timeMin = new Date(now.getTime() - back * 86400000);
   const timeMax = new Date(now.getTime() + days * 86400000);
-  const { ok, items, error } = await selahEvents(now.toISOString(), timeMax.toISOString());
+  const { ok, items, error } = await selahEvents(timeMin.toISOString(), timeMax.toISOString());
   if (!ok) return resp(200, { error: error || 'no_calendar', rentals: [] });
   return resp(200, { rentals: items.map(ev => ({ summary: ev.summary || '', start: ev.start, end: ev.end })) });
 }

@@ -124,11 +124,14 @@ textarea{min-height:70px;resize:vertical}
 .ok .big{font-size:40px}.ok h2{font-family:'Bricolage Grotesque',sans-serif;margin:8px 0 6px}
 .loading{color:var(--soft);font-size:12.5px;text-align:center;padding:20px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.backlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--pine2,#2f5d4a);text-decoration:none;margin:0 0 12px}
+.backlink:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
     <div class="brand">
       <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
       <div class="txt">
@@ -197,7 +200,8 @@ textarea{min-height:70px;resize:vertical}
   <!-- 4 GUESTS -->
   <div class="card">
     <h2><span class="step">4</span><span class="cs-only">Kdo bude ubytován</span><span class="en-only">Who's staying</span></h2>
-    <p class="hint"><span class="cs-only">Jméno a příjmení každé osoby. U dětí (0–12) zaškrtněte „dítě" a vyberte věk. Miminka 0–3 ve vlastní postýlce jsou zdarma (bez lůžka).</span><span class="en-only">First and last name of everyone. For children (0–12) tick "child" and choose their age. Babies 0–3 in their own crib are free (no bed charge).</span></p>
+    <p class="hint"><span class="cs-only"><b>Uveďte jméno a příjmení každého</b>, kdo bude v domě — včetně dětí. U dětí (0–12) zaškrtněte „dítě" a vyberte věk.</span><span class="en-only"><b>I need everyone's first and last name</b> who will be in the house — including children. For children (0–12) tick "child" and choose their age.</span></p>
+    <p class="hint" style="margin-top:-4px;color:var(--pine2)"><span class="cs-only">Miminka 0–3 ve vlastní postýlce jsou zdarma (bez poplatku za lůžko) — přesto je prosím uveďte.</span><span class="en-only">Babies 0–3 in their own crib are free (no bed charge) — but please still list them.</span></p>
     <div id="guests"></div>
     <button type="button" class="addbtn" id="addGuest">＋ <span class="cs-only">Přidat osobu</span><span class="en-only">Add person</span></button>
     <div class="count" id="guestCount"></div>
@@ -433,15 +437,15 @@ function renderPurpose(){
 function renderRules(){
   document.getElementById('rules').innerHTML=LANG==='en'?`
     <h3>General</h3><ul>
-      <li>Selah is for JV staff. Please treat it as a place of rest and respect.</li>
+      <li>Selah is a place for JV full-time staff.</li>
       <li>Maximum occupancy: 6 in the main house, 2 more in the apartment.</li>
-      <li>No smoking anywhere inside.</li>
+      <li>No smoking.</li>
       <li>Quiet hours 22:00–7:00.</li>
       <li>Report any damage or problems right away.</li>
       <li>Leave the house as you found it.</li>
     </ul>
     <h3>Checkout checklist — fine if missed</h3><ul>
-      <li>Bring in firewood — <b>$20</b></li>
+      <li>Restack firewood inside — <b>$20</b></li>
       <li>Clean the coffee maker — <b>$10</b></li>
       <li>Close all windows — <b>$10</b></li>
       <li>Wash and put away dishes — <b>$10</b></li>
@@ -451,15 +455,15 @@ function renderRules(){
       <li>Bring in the rocking chairs — <b>$10</b></li>
     </ul>`:`
     <h3>Obecná pravidla</h3><ul>
-      <li>Selah je pro pracovníky JV. Berte ho prosím jako místo odpočinku a respektu.</li>
+      <li>Selah je místo pro stálé pracovníky JV.</li>
       <li>Maximální kapacita: 6 osob v hlavním domě, 2 navíc v apartmánu.</li>
-      <li>Uvnitř se nikde nekouří.</li>
+      <li>Nekouřit.</li>
       <li>Noční klid 22:00–7:00.</li>
       <li>Jakékoli poškození nebo závady ihned nahlaste.</li>
       <li>Dům zanechte tak, jak jste ho našli.</li>
     </ul>
     <h3>Kontrolní seznam při odjezdu — pokuta za nesplnění</h3><ul>
-      <li>Doneste dřevo — <b>$20</b></li>
+      <li>Naskládejte dřevo zpět dovnitř — <b>$20</b></li>
       <li>Vyčistěte kávovar — <b>$10</b></li>
       <li>Zavřete všechna okna — <b>$10</b></li>
       <li>Umyjte a ukliďte nádobí — <b>$10</b></li>

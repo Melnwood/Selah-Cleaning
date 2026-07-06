@@ -13,6 +13,15 @@
   --line:#d6ddd2; --spruce:#1f3a2e; --pine:#2f5d4a; --pine2:#3c7359;
   --amber:#a56c15; --amberbg:#f5ead2; --barn:#a2372a; --barnbg:#f4ddd6; --gold:#c6a24a;
 }
+.stay{display:block;width:100%;text-align:left;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;background:#fff;font:inherit;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:8px}
+.stay.sel{border-color:var(--pine);background:#e2ede6}
+.stay .co{display:block;font-size:11.5px;font-weight:400;color:var(--soft);margin-top:2px}
+.stay.none{font-weight:500;color:var(--soft)}
+.repair{border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px;background:var(--panel2)}
+.repair .rtxt{font-size:14px}
+.repair .rmeta{margin-top:6px;font-size:12px;color:var(--soft);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rb{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+.rb.open{background:var(--barnbg);color:var(--barn)} .rb.prog{background:#f6ecd2;color:#b07d12}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-text-size-adjust:100%;line-height:1.45}
@@ -135,11 +144,14 @@ textarea{min-height:70px;resize:vertical}
 .hint{font-size:12px;color:var(--soft);margin-top:6px}
 button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.backlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--pine2,#2f5d4a);text-decoration:none;margin:0 0 12px}
+.backlink:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
     <div class="brand">
       <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
       <div style="flex:1;min-width:0">
@@ -154,6 +166,12 @@ button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-
   </header>
 
   <div id="form">
+    <!-- Stay picker -->
+    <section class="card" id="stayCard">
+      <div class="eyebrow"><span class="n">☆</span><h2><span class="cs-only">Který pobyt uklízíte?</span><span class="en-only">Which stay are you cleaning after?</span></h2></div>
+      <div class="muted" style="margin-bottom:8px"><span class="cs-only">Vyberte hosty, po kterých uklízíte — úklid se k nim přiřadí.</span><span class="en-only">Pick the guests you’re cleaning up after — the cleaning is linked to them.</span></div>
+      <div id="stayList"><div class="muted">…</div></div>
+    </section>
     <!-- 1 · Cleaner -->
     <section class="card">
       <div class="eyebrow"><span class="n">1</span><h2><span class="cs-only">Kdo uklízel?</span><span class="en-only">Who cleaned?</span></h2></div>
@@ -199,6 +217,13 @@ button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-
       </div>
     </section>
 
+    <!-- Open repairs -->
+    <section class="card" id="repairsCard" style="display:none">
+      <div class="eyebrow"><span class="n">🔧</span><h2><span class="cs-only">Otevřené opravy</span><span class="en-only">Open repairs</span></h2></div>
+      <div class="muted" style="margin-bottom:8px"><span class="cs-only">Nahlášené opravy a jejich stav.</span><span class="en-only">Reported repairs and their current status.</span></div>
+      <div id="repairsList"></div>
+    </section>
+
     <div class="err" id="err"></div>
     <div class="muted" style="text-align:center;margin-top:8px"><span class="cs-only">Odesláním potvrzujete, že úklid byl dokončen.</span><span class="en-only">Submitting marks this cleaning as completed.</span></div>
   </div>
@@ -237,7 +262,8 @@ button:focus-visible,.room:focus-visible{outline:2px solid var(--pine2);outline-
 const API='/.netlify/functions/airtable';
 const F={cleaner:'fldlPGZHTcOIL4DvO',notes:'flddOS4VpM1ZNFkdx',needsFixing:'fld1tdDipneoCHk5Z',
   fixNotes:'fld0ySTAz7IwQ6gys',completed:'fld3RlB1a49YvyLyu',completedAt:'fldwpWWaqqXK3itx4',
-  startAt:'fldy5fzkRiO3WQgd9',mStatus:'fld1XHyJRgSstFmxO',priority:'fldoCrKTXVRW1UX5J'};
+  startAt:'fldy5fzkRiO3WQgd9',mStatus:'fld1XHyJRgSstFmxO',priority:'fldoCrKTXVRW1UX5J',
+  renter:'fldesBx0AyJOhxrns',assigned:'fldeaalnwAPlZZ5XP'};
 
 // [fieldId, Czech, English, price]
 const ROOMS=[
@@ -279,7 +305,7 @@ const CHECKS=[
  ['fld7g8gRiC49FLWtn','Houpací křesla uvnitř','Rocking chairs inside',200,'Yes']
 ];
 const BASE_FEE=200;
-const state={rooms:{},checks:{},fixing:'No'};
+const state={rooms:{},checks:{},fixing:'No',renter:''};
 
 // ---- Language ----
 let LANG=localStorage.getItem('cabin_lang')||'cs';
@@ -374,6 +400,51 @@ function markPeople(){const v=document.getElementById('cleaner').value.trim();pc
 pc.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{document.getElementById('cleaner').value=b.dataset.name;markPeople();});
 document.getElementById('cleaner').addEventListener('input',markPeople);
 
+// ---- Stay picker (recent checkouts) + open repairs ----
+function selv(v){return v&&typeof v==='object'?v.name:v;}
+function statusKey(s){s=String(selv(s)||'');if(s.indexOf('Prob')===0)return 'prog';if(s.indexOf('Vyře')===0)return 'done';if(s.indexOf('Neop')===0)return 'wont';return 'open';}
+const MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function dayStr(s){const a=new Date(s);return `${MON3[a.getMonth()]} ${a.getDate()}`;}
+function rangeStr(s,e){const a=new Date(s),b=new Date(e);return a.getMonth()===b.getMonth()?`${MON3[a.getMonth()]} ${a.getDate()}–${b.getDate()}`:`${MON3[a.getMonth()]} ${a.getDate()} – ${MON3[b.getMonth()]} ${b.getDate()}`;}
+function renterLabel(sum,s,e){return `${sum.split('#')[0].trim()} · ${rangeStr(s,e)}`;}
+const STAY_SKIP=/^(blocked|booked|book d|massage|selah deep clean|selah billing|get ?meds|mel.s meds|mel’s meds)/i;
+async function loadStays(){
+  const el=document.getElementById('stayList');
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'rentals',back:18,days:2})});
+    const data=await r.json();
+    if(data.error==='no_calendar'||data.error==='no_key'){el.innerHTML=`<div class="muted">${T('Kalendář zatím není připojen — pokračujte bez výběru.','Calendar not connected yet — continue without picking.')}</div>`;return;}
+    const top=new Date();top.setHours(23,59,59,999);const cutoff=Date.now()-19*86400000;
+    const stays=(data.rentals||[]).map(ev=>{
+      const s=ev.start&&ev.start.date,e=ev.end&&ev.end.date,sum=(ev.summary||'').trim();
+      if(!s||!e||!sum||STAY_SKIP.test(sum))return null;
+      const end=new Date(e);if(end>top||end.getTime()<cutoff)return null;
+      return {renter:renterLabel(sum,s,e),end:e};
+    }).filter(Boolean).sort((a,b)=>new Date(b.end)-new Date(a.end));
+    renderStays(stays);
+  }catch(e){el.innerHTML=`<div class="muted">${T('Nedávné pobyty se nepodařilo načíst — pokračujte bez výběru.','Couldn’t load recent stays — continue without picking.')}</div>`;}
+}
+function renderStays(stays){
+  const el=document.getElementById('stayList');
+  if(!stays.length){el.innerHTML=`<div class="muted">${T('Žádné nedávné odjezdy. Pokračujte bez výběru.','No recent checkouts. Continue without picking.')}</div>`;return;}
+  el.innerHTML=stays.map(st=>`<button type="button" class="stay" data-renter="${esc(st.renter)}">${esc(st.renter)}<span class="co">${T('odjezd','checkout')} ${dayStr(st.end)}</span></button>`).join('')
+    +`<button type="button" class="stay none" data-renter="">${T('Jiný / bez přiřazení','Other / none')}</button>`;
+  el.querySelectorAll('.stay').forEach(b=>b.onclick=()=>{state.renter=b.dataset.renter;el.querySelectorAll('.stay').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');});
+  const first=el.querySelector('.stay');if(first){first.classList.add('sel');state.renter=first.dataset.renter;}
+}
+function renderRepairs(records){
+  const open=records.filter(x=>{const f=x.fields;const wo=selv(f[F.needsFixing])==='Yes';const k=statusKey(f[F.mStatus]);return wo&&(k==='open'||k==='prog');})
+    .sort((a,b)=>new Date(b.fields[F.startAt]||b.createdTime)-new Date(a.fields[F.startAt]||a.createdTime));
+  const card=document.getElementById('repairsCard');
+  if(!open.length){card.style.display='none';return;}
+  card.style.display='';
+  document.getElementById('repairsList').innerHTML=open.map(x=>{
+    const f=x.fields;const k=statusKey(f[F.mStatus]);
+    const badge=k==='prog'?`<span class="rb prog">${T('Probíhá','In progress')}</span>`:`<span class="rb open">${T('Nové','Open')}</span>`;
+    return `<div class="repair"><div class="rtxt">${esc(f[F.fixNotes]||'—')}</div><div class="rmeta">${badge}${f[F.assigned]?' · 👤 '+esc(f[F.assigned]):''}</div></div>`;
+  }).join('');
+}
+
 // ---- Load cleaner suggestions + remembered name ----
 (async()=>{
   const last=localStorage.getItem('cabin_cleaner');if(last)document.getElementById('cleaner').value=last;markPeople();
@@ -383,7 +454,9 @@ document.getElementById('cleaner').addEventListener('input',markPeople);
     const {records=[]}=await r.json();
     const names=[...new Set(records.map(x=>x.fields[F.cleaner]).filter(Boolean))].sort();
     document.getElementById('cleaners').innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
+    renderRepairs(records);
   }catch(e){}
+  loadStays();
 })();
 
 // ---- Submit ----
@@ -401,6 +474,7 @@ async function submit(){
   const now=new Date().toISOString();
   const fields={};
   fields[F.cleaner]=cleaner;
+  if(state.renter)fields[F.renter]=state.renter;
   ROOMS.forEach(g=>g.items.forEach(([id])=>{fields[id]=!!state.rooms[id];}));
   CHECKS.forEach(([id,,,,yesVal])=>{fields[id]=state.checks[id]?yesVal:'No';});
   const notes=document.getElementById('notes').value.trim();if(notes)fields[F.notes]=notes;

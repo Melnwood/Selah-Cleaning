@@ -50,6 +50,8 @@ header{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px
 .bk .who{font-size:13.5px;color:var(--soft);margin-top:2px}
 .badge{font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;flex:none}
 .badge.req{background:var(--pendbg);color:var(--pend)} .badge.ok{background:var(--donebg);color:var(--done)} .badge.no{background:var(--barnbg);color:var(--barn)}
+.badge.cal{background:#e6eef5;color:#2f5d7a}
+.notice-cal{background:#eef3f7;border:1px dashed #b8ccd9;color:#3a5a70;border-radius:11px;padding:10px 12px;font-size:12.5px;margin-bottom:10px}
 .meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px}
 .meta b{font-weight:700}
 .cost{font-family:'Space Mono',monospace;font-weight:700;color:var(--amber)}
@@ -76,12 +78,32 @@ details[open] summary::before{content:"▾ ";}
 .err{background:var(--barnbg);border:1px solid var(--barn);color:#7a281d;border-radius:12px;padding:14px;margin:14px 0}
 .foot{font-size:11.5px;color:var(--soft);margin-top:18px;text-align:center}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--spruce);color:#fff;font-size:13.5px;font-weight:600;padding:11px 16px;border-radius:11px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:80;max-width:90%;text-align:center}
+.reportbtn{margin-top:10px;width:100%;font:inherit;font-weight:700;font-size:14px;color:#fff;background:var(--pine);border:0;border-radius:11px;padding:12px;cursor:pointer}
+#repModal{position:fixed;inset:0;z-index:70;background:rgba(20,30,24,.5);display:none;align-items:flex-end;justify-content:center}
+#repModal.show{display:flex}
+@media(min-width:640px){#repModal{align-items:center;padding:16px}}
+.repsheet{background:#fff;width:100%;max-width:780px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0}
+@media(min-width:640px){.repsheet{border-radius:16px}}
+.rephead{position:sticky;top:0;background:#fff;display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);z-index:2}
+.rephead .title{flex:1;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px}
+.repactions{display:flex;gap:6px}
+.repactions button{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--pine);border-radius:9px;padding:7px 11px;cursor:pointer}
+.repbody{padding:12px 16px 20px}
+.reptable{width:100%;border-collapse:collapse;font-size:12.5px}
+.reptable th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft);padding:6px 8px;border-bottom:1px solid var(--line)}
+.reptable td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.reptable .r{text-align:right;font-family:'Space Mono',monospace;white-space:nowrap}
+.reptotal{margin-top:12px;font-size:13px;font-weight:700;text-align:right}
+@media print{.wrap,#toast,.reportbtn{display:none!important}#repModal{position:static;display:block!important;background:#fff}#repModal .repactions{display:none}.repsheet{max-height:none;box-shadow:none;border-radius:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.backlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--pine2,#2f5d4a);text-decoration:none;margin:0 0 12px}
+.backlink:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
     <div class="brand">
       <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
       <div class="txt">
@@ -93,11 +115,25 @@ details[open] summary::before{content:"▾ ";}
     </div>
     <div class="sumrow" id="sumrow"></div>
     <div class="filters" id="filters"></div>
+    <button type="button" id="reportBtn" class="reportbtn">📊 <span class="cs-only">Report pro účetní</span><span class="en-only">Accountant report</span></button>
   </header>
   <div id="app"><div class="loading">…</div></div>
   <div class="foot" id="foot"></div>
 </div>
 <div id="toast" class="toast" hidden></div>
+<div id="repModal">
+  <div class="repsheet">
+    <div class="rephead">
+      <div class="title"><span class="cs-only">Report pro účetní</span><span class="en-only">Accountant report</span></div>
+      <div class="repactions">
+        <button type="button" id="repCopy"><span class="cs-only">Kopírovat</span><span class="en-only">Copy</span></button>
+        <button type="button" id="repPrint"><span class="cs-only">Tisk</span><span class="en-only">Print</span></button>
+        <button type="button" id="repClose">✕</button>
+      </div>
+    </div>
+    <div class="repbody" id="repBody"></div>
+  </div>
+</div>
 
 <script>
 const API='/.netlify/functions/airtable';
@@ -107,7 +143,7 @@ const F={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL
   signature:'fldrTq35YqRfKXXB5',status:'fldpaz8B5NbPQ46pR',submitted:'fldmEZN27QcX4UxPV',payment:'fldHvsV5XaIiSm5hl',acct:'fldGUaa6bMqkISP4e'};
 const RATES={bed:15,util:15,house:50,apt:25};
 const ST={REQ:'Požadováno (Requested)',OK:'Schváleno (Approved)',NO:'Zamítnuto (Declined)'};
-let RAW=[],FILTER='all';
+let RAW=[],CAL=[],CAL_ERR=null,FILTER='all';
 let LANG=localStorage.getItem('cabin_lang')||'cs';
 const HL=new URLSearchParams(location.search).get('id');
 function T(cs,en){return LANG==='en'?en:cs;}
@@ -137,8 +173,35 @@ async function load(){
     if(r.status===401){const c=prompt('Access code');if(c){localStorage.setItem('cabin_code',c);location.reload();}return;}
     const {records=[]}=await r.json();
     RAW=records;
+    try{
+      const cr=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'rentals',days:calDays()})});
+      const cdata=await cr.json();
+      CAL_ERR=cdata.error||null;
+      CAL=buildCalBookings(cdata.rentals);
+    }catch(e){CAL_ERR='fetch';CAL=[];}
     render();
+    if(new URLSearchParams(location.search).has('report'))renderReport();
   }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst rezervace: ','Could not load bookings: ')+esc(e.message||e)+'</div>';}
+}
+const CAL_SKIP=/^(blocked|booked|book d|massage|selah deep clean|selah billing|get ?meds|mel.s meds|mel’s meds)/i;
+function calDays(){return Math.max(30,Math.ceil((windowEnd()-new Date())/86400000)+3);}
+function buildCalBookings(items){
+  const out=[];
+  for(const ev of (items||[])){
+    const s=ev.start&&ev.start.date, e=ev.end&&ev.end.date;
+    if(!s||!e)continue;
+    const sum=(ev.summary||'').trim();
+    if(!sum||CAL_SKIP.test(sum))continue;
+    const pm=sum.match(/\((\d+)\)/), am=sum.match(/#\s*([A-Za-z0-9\/\-]+)/);
+    out.push({id:'cal_'+(ev.id||(s+e)),source:'calendar',fields:{
+      [F.bookedBy]:sum.split('#')[0].trim(),[F.checkin]:s,[F.checkout]:e,
+      [F.party]:pm?pm[1]:'',[F.acct]:am?am[1]:''}});
+  }
+  return out;
+}
+function combined(){
+  const cal=CAL.filter(c=>!RAW.some(b=>b.fields[F.checkin]===c.fields[F.checkin]&&b.fields[F.checkout]===c.fields[F.checkout]));
+  return RAW.concat(cal);
 }
 
 function windowStart(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1);}
@@ -160,35 +223,39 @@ function calTitle(f){
 }
 
 function render(){
-  // summary
-  const win=RAW.filter(inWindow);
-  const pend=win.filter(x=>stKey(x.fields[F.status])==='req').length;
-  const ok=win.filter(x=>stKey(x.fields[F.status])==='ok').length;
+  const all=combined();
+  const win=all.filter(inWindow);
+  const pend=win.filter(x=>x.source!=='calendar'&&stKey(x.fields[F.status])==='req').length;
+  const confN=win.filter(x=>x.source==='calendar'||stKey(x.fields[F.status])==='ok').length;
   document.getElementById('sumrow').innerHTML=`
     <div class="sum"><div class="n">${win.length}</div><div class="l">${T('Ve výhledu','In window')}</div></div>
     <div class="sum pend"><div class="n">${pend}</div><div class="l">${T('Čeká','Pending')}</div></div>
-    <div class="sum ok"><div class="n">${ok}</div><div class="l">${T('Schváleno','Approved')}</div></div>`;
-  // filters
-  const F2=[['all',T('Vše','All')],['req',T('Čeká','Pending')],['ok',T('Schváleno','Approved')],['no',T('Zamítnuto','Declined')]];
+    <div class="sum ok"><div class="n">${confN}</div><div class="l">${T('Potvrzeno','Confirmed')}</div></div>`;
+  const F2=[['all',T('Vše','All')],['req',T('Čeká','Pending')],['ok',T('Potvrzeno','Confirmed')],['no',T('Zamítnuto','Declined')]];
   document.getElementById('filters').innerHTML=F2.map(([k,l])=>`<button class="filt ${FILTER===k?'sel':''}" data-f="${k}">${l}</button>`).join('');
   document.querySelectorAll('.filt').forEach(b=>b.onclick=()=>{FILTER=b.dataset.f;render();});
 
-  let list=RAW.filter(inWindow);
-  // always include a deep-linked booking even if outside window
-  if(HL&&!list.find(x=>x.id===HL)){const extra=RAW.find(x=>x.id===HL);if(extra)list=[extra,...list];}
-  if(FILTER!=='all')list=list.filter(x=>stKey(x.fields[F.status])===FILTER);
+  let list=all.filter(inWindow);
+  if(HL&&!list.find(x=>x.id===HL)){const extra=all.find(x=>x.id===HL);if(extra)list=[extra,...list];}
+  if(FILTER==='req')list=list.filter(x=>x.source!=='calendar'&&stKey(x.fields[F.status])==='req');
+  else if(FILTER==='ok')list=list.filter(x=>x.source==='calendar'||stKey(x.fields[F.status])==='ok');
+  else if(FILTER==='no')list=list.filter(x=>x.source!=='calendar'&&stKey(x.fields[F.status])==='no');
   list.sort((a,b)=>d(a.fields[F.checkin])-d(b.fields[F.checkin]));
 
   const app=document.getElementById('app');
-  if(!list.length){app.innerHTML=`<div class="empty">${T('Žádné rezervace v tomto výhledu.','No bookings in this window.')}</div>`;return;}
-  const approved=RAW.filter(x=>stKey(x.fields[F.status])==='ok');
-  let html='',curMonth='';
+  const confirmed=all.filter(x=>x.source==='calendar'||stKey(x.fields[F.status])==='ok');
+  let head='';
+  if(CAL_ERR==='no_calendar'||CAL_ERR==='no_key')head=`<div class="notice-cal">📅 ${T('Kalendář Selah zatím není připojen — zobrazují se jen žádosti z formuláře.','The Selah calendar isn\'t connected yet — showing form requests only.')}</div>`;
+  else if(CAL_ERR)head=`<div class="conflict" style="margin:0 0 10px">⚠ ${T('Kalendář se nepodařilo načíst — potvrzené rezervace nemusí být zobrazeny.','Couldn\'t load the calendar — confirmed bookings may be missing.')}</div>`;
+  if(!list.length){app.innerHTML=head+`<div class="empty">${T('Žádné rezervace v tomto výhledu.','No bookings in this window.')}</div>`;document.getElementById('foot').textContent='';return;}
+  let html=head,curMonth='';
   list.forEach(x=>{
     const f=x.fields, mk=monthKey(f[F.checkin]);
     if(mk!==curMonth){curMonth=mk;html+=`<div class="monthhdr">${monthLabel(mk)}</div>`;}
+    if(x.source==='calendar'){html+=calCard(x,confirmed);return;}
     const k=stKey(f[F.status]);
     const badge=k==='ok'?`<span class="badge ok">✓ ${T('SCHVÁLENO','APPROVED')}</span>`:k==='no'?`<span class="badge no">${T('ZAMÍTNUTO','DECLINED')}</span>`:`<span class="badge req">${T('ČEKÁ','PENDING')}</span>`;
-    const conf=approved.filter(o=>o.id!==x.id&&overlaps(f,o.fields)).map(o=>o.fields[F.bookedBy]);
+    const conf=confirmed.filter(o=>o.id!==x.id&&overlaps(f,o.fields)).map(o=>o.fields[F.bookedBy]);
     const pay=sel(f[F.payment])||'—';const isCash=/Cash|Hotov/i.test(pay);
     html+=`<div class="bk ${x.id===HL?'flash':''}" id="bk_${x.id}" data-id="${x.id}">
       <div class="top">
@@ -202,11 +269,10 @@ function render(){
         <span class="cost">${'$'+costOf(f).toLocaleString('en-US')}</span>
         <span>💳 ${isCash?T('hotově','cash'):(f[F.acct]?'#'+esc(f[F.acct]):T('JV účet','JV account'))}</span>
       </div>
-      ${conf.length?`<div class="conflict">⚠ ${T('Překrývá se se schválenou rezervací','Overlaps an approved booking')}: ${esc(conf.join(', '))}</div>`:''}
+      ${conf.length?`<div class="conflict">⚠ ${T('Překrývá se s potvrzenou rezervací','Overlaps a confirmed booking')}: ${esc(conf.join(', '))}</div>`:''}
       <details>
         <summary>${T('Podrobnosti','Details')}</summary>
-        <div class="kv">
-          <span class="k">${T('Hosté','Guests')}</span><span></span></div>
+        <div class="kv"><span class="k">${T('Hosté','Guests')}</span><span></span></div>
         <div class="guestbox">${esc(f[F.guests]||'—')}</div>
         <div class="kv">
           <span class="k">${T('Účel','Purpose')}</span><span>${esc(sel(f[F.purpose])||'—')}</span>
@@ -230,6 +296,23 @@ function render(){
   if(HL){const el=document.getElementById('bk_'+HL);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
   document.getElementById('foot').textContent=`${T('Okno','Window')}: ${windowStart().toLocaleDateString(locale(),{month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{month:'short',year:'numeric'})}`;
 }
+function calCard(x,confirmed){
+  const f=x.fields;
+  const conf=confirmed.filter(o=>o.id!==x.id&&overlaps(f,o.fields)).map(o=>o.fields[F.bookedBy]);
+  return `<div class="bk ${x.id===HL?'flash':''}" id="bk_${x.id}" data-id="${x.id}">
+    <div class="top">
+      <div><div class="dates">${human(f[F.checkin])} → ${human(f[F.checkout])}</div>
+        <div class="who">${esc(f[F.bookedBy]||'—')} · ${nights(f)} ${T('nocí','nights')}</div></div>
+      <span class="badge cal">📅 ${T('V KALENDÁŘI','ON CALENDAR')}</span>
+    </div>
+    <div class="meta">
+      ${f[F.party]?`<span>👥 ${esc(f[F.party])}</span>`:''}
+      ${f[F.acct]?`<span>💳 #${esc(f[F.acct])}</span>`:''}
+    </div>
+    ${conf.length?`<div class="conflict">⚠ ${T('Překrývá se s jinou rezervací','Overlaps another booking')}: ${esc(conf.join(', '))}</div>`:''}
+    <div style="font-size:12px;color:var(--soft);margin-top:10px">${T('Potvrzeno v kalendáři Selah. Úpravy proveďte přímo v Google Kalendáři.','Confirmed on the Selah Calendar. Edit in Google Calendar.')}</div>
+  </div>`;
+}
 
 function wire(){
   document.querySelectorAll('[data-accept]').forEach(b=>b.onclick=()=>setStatus(b.dataset.accept,ST.OK,b));
@@ -252,6 +335,43 @@ async function setStatus(id,status,btn){
 }
 let toastT;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2800);}
+
+// ---- Accountant report ----
+function payLabel(p){if(!p)return '—';if(/Cash|Hotov/i.test(p))return T('Hotově','Cash');if(/account|účet/i.test(p))return T('JV účet','JV account');return p;}
+function reportRows(){
+  const list=combined().filter(inWindow).filter(x=>x.source==='calendar'||stKey(x.fields[F.status])!=='no');
+  list.sort((a,b)=>d(a.fields[F.checkin])-d(b.fields[F.checkin]));
+  return list.map(x=>{
+    const f=x.fields, isCal=x.source==='calendar';
+    const rawAcct=f[F.acct]||'';
+    const isCash=isCal?/cash/i.test(rawAcct):/Cash|Hotov/i.test(sel(f[F.payment])||'');
+    const acctNum=isCash?'':rawAcct;
+    const account=isCash?T('Hotově','Cash'):(isCal?(acctNum?T('JV účet','JV account'):'—'):payLabel(sel(f[F.payment])));
+    const amount=isCal?0:costOf(f);
+    const reason=isCal?'':[sel(f[F.purpose])||'',f[F.reason]||''].filter(Boolean).join(' — ');
+    return {name:f[F.bookedBy]||'',dates:human(f[F.checkin])+' → '+human(f[F.checkout]),account,acct:acctNum,amount,amountStr:isCal?'':('$'+amount.toLocaleString('en-US')),reason};
+  });
+}
+function renderReport(){
+  const rows=reportRows();
+  const total=rows.reduce((s,r)=>s+(r.amount||0),0);
+  const head=`<tr><th>${T('Jméno','Name')}</th><th>${T('Termín','Dates')}</th><th>${T('Účet','Account')}</th><th>${T('Číslo JV účtu','JV account #')}</th><th class="r">${T('Částka','Amount')}</th><th>${T('Důvod','Reason')}</th></tr>`;
+  const body=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.dates)}</td><td>${esc(r.account)}</td><td>${esc(r.acct||'—')}</td><td class="r">${esc(r.amountStr||'—')}</td><td>${esc(r.reason||'—')}</td></tr>`).join('');
+  document.getElementById('repBody').innerHTML=rows.length
+    ?`<table class="reptable">${head}${body}</table><div class="reptotal">${T('Celkem k zaúčtování','Total to charge')}: $${total.toLocaleString('en-US')}</div><div style="font-size:11px;color:var(--soft);margin-top:6px">${T('Období','Window')}: ${windowStart().toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}. ${T('Rezervace z kalendáře nemají uloženou částku ani důvod.','Calendar bookings have no stored amount or reason.')}</div>`
+    :`<div class="empty">${T('Žádné rezervace ve výhledu.','No bookings in the window.')}</div>`;
+  document.getElementById('repModal').classList.add('show');
+}
+function reportTSV(){
+  const rows=reportRows();
+  const H=[T('Jméno','Name'),T('Termín','Dates'),T('Účet','Account'),T('Číslo JV účtu','JV account #'),T('Částka','Amount'),T('Důvod','Reason')];
+  return [H.join('\t')].concat(rows.map(r=>[r.name,r.dates,r.account,r.acct,r.amountStr,r.reason].join('\t'))).join('\n');
+}
+document.getElementById('reportBtn').onclick=renderReport;
+document.getElementById('repClose').onclick=()=>document.getElementById('repModal').classList.remove('show');
+document.getElementById('repPrint').onclick=()=>window.print();
+document.getElementById('repCopy').onclick=()=>{const t=reportTSV();if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast(T('Zkopírováno ✓','Copied ✓')),()=>toast(T('Kopírování selhalo','Copy failed')));};
+document.getElementById('repModal').addEventListener('click',e=>{if(e.target.id==='repModal')e.currentTarget.classList.remove('show');});
 
 applyLang();
 load();

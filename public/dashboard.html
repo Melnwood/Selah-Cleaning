@@ -136,11 +136,14 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--panel2)}
 .kv .k{color:var(--soft)}
 button:focus-visible,.woitem:focus-visible,.card2:focus-visible{outline:2px solid var(--pine2);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.backlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--pine2,#2f5d4a);text-decoration:none;margin:0 0 12px}
+.backlink:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
     <div class="brand">
       <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
       <div class="txt">
@@ -362,6 +365,8 @@ function woRef(id){return '#'+String(id).slice(-4).toUpperCase();}
 function upcomingBody(){
   if(RENT_ERR==='no_calendar'||RENT_ERR==='no_key')
     return `<div class="notice">📅 ${T('Nadcházející pronájmy se zobrazí, jakmile bude připojen kalendář „04 Selah".','Upcoming rentals will appear once the “04 Selah” calendar is connected.')}</div>`;
+  if(RENT_ERR)
+    return `<div class="notice" style="border-color:var(--barn);color:var(--barn)">⚠ ${T('Kalendář se nepodařilo načíst. Zkontrolujte, že je „04 Selah" nasdílen se servisním účtem a že jsou nastavené klíče.','Couldn\'t load the calendar. Check that “04 Selah” is shared with the service account and the keys are set.')}<br><span style="opacity:.7;font-size:11px">${esc(RENT_ERR)}</span></div>`;
   if(!UPCOMING.length)return `<div class="empty">${T('Žádné pronájmy v příštích 30 dnech.','No rentals in the next 30 days.')}</div>`;
   const MON=["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const fmt=s=>{const d=new Date(s);return MON[d.getMonth()+1]+' '+d.getDate();};
@@ -401,6 +406,30 @@ function woCard(x){
     <div class="meta">${T('Nahlásil/a','Reported by')} ${esc(f[F.cleaner]||'—')} · ${dstr(whenOf(x))}${f[F.assigned]?' · 👤 '+esc(f[F.assigned]):''}</div>
   </div>`;
 }
+const CHECKS=[
+ ['fldQDortdSard0Rob','Dřevo doneseno','Firewood brought in',500],
+ ['fldOA2U6ot11URljE','Kávovar vyčištěn','Coffee maker cleaned',100],
+ ['fldIGBLvWKACsnrbV','Okna zavřena','Windows closed',200],
+ ['fldRURSjkbKlhgqmz','Nádobí umyto','Dishes done',100],
+ ['fldjY2d2pTdRPjfVU','Odpadky vyneseny','Trash taken out',200],
+ ['fldyOQIP4O0s1Y9GN','Světla zhasnuta','Lights off',200],
+ ['fldJyOMxHWd0rE1Zo','Dveře zamčeny','Doors locked',500],
+ ['fld7g8gRiC49FLWtn','Houpací křesla uklizena','Rocking chairs in',200],
+];
+const MON3={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function stayNights(renter,ref){
+  if(!renter)return null;
+  const p=String(renter).split('·').pop().trim().replace(/[–—]/g,'-');
+  let sM,sD,eM,eD,m;
+  if((m=p.match(/([A-Za-z]{3})\s+(\d+)\s*-\s*([A-Za-z]{3})\s+(\d+)/))){sM=MON3[m[1]];sD=+m[2];eM=MON3[m[3]];eD=+m[4];}
+  else if((m=p.match(/([A-Za-z]{3})\s+(\d+)\s*-\s*(\d+)/))){sM=eM=MON3[m[1]];sD=+m[2];eD=+m[3];}
+  else return null;
+  if(sM==null||eM==null)return null;
+  const y=ref?new Date(ref).getFullYear():new Date().getFullYear();
+  const s=new Date(sM>eM?y-1:y,sM,sD), e=new Date(y,eM,eD);
+  const n=Math.round((e-s)/86400000);
+  return n>0&&n<90?n:null;
+}
 function cleaningView(id){
   return {title:()=>T('Úklid','Cleaning'),body:()=>{
     const x=byId(id);if(!x)return empty();const f=x.fields;
@@ -409,13 +438,19 @@ function cleaningView(id){
     html+=`<div class="line"><span>${T('Základní poplatek','Base fee')}</span><span class="v">${BASE_FEE} Kč</span></div>`;
     html+=`<div class="line tot"><span>${T('Odměna celkem','Pay total')}</span><span class="v">${kc(money(f[F.totalOwed]))}</span></div>`;
     const paid=!!f[F.paid];const fine=f[F.fines]||0;const notes=f[F.notes]||'';
+    const nts=stayNights(f[F.renter],whenOf(x));
+    const renterLine=f[F.renter]?esc(f[F.renter])+(nts?` <span style="color:var(--soft);font-weight:400">(${nts} ${daysWord(nts)==='den'||daysWord(nts)==='day'?T('noc','night'):T('nocí','nights')})</span>`:''):'';
+    const missed=CHECKS.filter(([id])=>{const v=selName(f[id]);return v&&String(v).trim()==='No';});
     return `<div class="detail">
       <div class="kv"><span class="k">${T('Datum','Date')}</span><span>${dstr(whenOf(x))}</span>
-        ${f[F.renter]?`<span class="k">${T('Hosté','Guest')}</span><span><b>${esc(f[F.renter])}</b></span>`:''}
+        ${f[F.renter]?`<span class="k">${T('Hosté','Guest')}</span><span><b>${renterLine}</b></span>`:''}
         <span class="k">${T('Uklízeč','Cleaner')}</span><span>${esc(f[F.cleaner]||'—')}</span>
         <span class="k">${T('Platba','Payment')}</span><span>${paid?'✓ '+T('zaplaceno','paid')+(f[F.paidDate]?' '+dstr(f[F.paidDate]):''):'— '+T('nezaplaceno','unpaid')}</span></div>
       <div class="sec"><div class="st">${T('Co bylo uklizeno','What was cleaned')}</div>${html}</div>
-      ${fine?`<div class="finebox">${T('Pokuty hostům za tento pobyt','Guest fines for this stay')}: <b>${kc(fine)}</b> — ${T('účtováno hostům.','charged to guests.')}</div>`:''}
+      ${fine?`<div class="sec"><div class="st">${T('Pokuty hostům','Guest fines')}</div>
+        <div style="font-size:12px;color:var(--soft);margin-bottom:6px">${T('Nesplněné úkoly při odjezdu — účtováno hostům:','Checkout tasks not done — charged to guests:')}</div>
+        ${missed.length?missed.map(([id,cs,en,amt])=>`<div class="line"><span>✗ ${T(cs,en)}</span><span class="v">${amt} Kč</span></div>`).join(''):''}
+        <div class="line tot"><span>${T('Pokuty celkem','Total fines')}</span><span class="v">${kc(fine)}</span></div></div>`:''}
       ${notes?`<div class="sec"><div class="st">${T('Poznámky','Notes')}</div><div class="box">${esc(notes)}</div></div>`:''}
     </div>`;
   }};

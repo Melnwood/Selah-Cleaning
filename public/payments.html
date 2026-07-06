@@ -96,11 +96,14 @@ nav a{color:var(--pine2);text-decoration:none;font-weight:600;margin-right:14px}
 .foot{font-size:11.5px;color:var(--soft);margin-top:18px;text-align:center}
 button:focus-visible{outline:2px solid var(--pine2);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.backlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--pine2,#2f5d4a);text-decoration:none;margin:0 0 12px}
+.backlink:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
     <div class="brand">
       <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
       <div class="txt">
