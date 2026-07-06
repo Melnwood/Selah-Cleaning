@@ -35,3 +35,8 @@
   from = "/bookings"
   to = "/bookings.html"
   status = 200
+
+[[redirects]]
+  from = "/emails"
+  to = "/emails.html"
+  status = 200

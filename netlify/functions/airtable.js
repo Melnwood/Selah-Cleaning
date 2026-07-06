@@ -57,6 +57,7 @@ exports.handler = async (event) => {
       if (body.action === 'book') return await book(body);
       if (body.action === 'bookingStatus') return await bookingStatus(body);
       if (body.action === 'fx') return await fxRate(body);
+      if (body.action === 'sendEmail') return await sendEmailAction(body);
       if (!body.fields || typeof body.fields !== 'object') return resp(400, { error: 'Missing "fields".' });
       const r = await fetch(AT, {
         method: 'POST',
@@ -173,7 +174,8 @@ const B_PARTY = 'fldRuksM0SOYRaJOS', B_GUESTS = 'fldCv5Z6JFuNuNC3G', B_EMAIL = '
   B_PHONE = 'fld1jHbXT1sLuGYfm', B_TEAM = 'fldO7Wq8cW5Pnifbf', B_PURPOSE = 'fld01hHE2rz4WEnFU',
   B_REASON = 'fldRapIBVEQ7hYL7c', B_PAYMENT = 'fldHvsV5XaIiSm5hl', B_ACCT = 'fldGUaa6bMqkISP4e',
   B_EVENTID = 'fldns5wVSVhRiepZR';
-const B_SPACE = 'fldUYaGvdvcV3EZOM', B_ACCEPT_SENT = 'fldyEfAAs7Ot72xBp';
+const B_SPACE = 'fldUYaGvdvcV3EZOM', B_ACCEPT_SENT = 'fldyEfAAs7Ot72xBp',
+  B_R7 = 'fldmGu5DEgUbICdHc', B_R2 = 'fldNMqw98yv5doBnL', B_CHECKOUT_SENT = 'fldAgU8UBLkXFjIsy';
 function selName(v) { return v && typeof v === 'object' ? v.name : v; }
 
 function calTitle(f) {
@@ -317,6 +319,35 @@ async function googleToken(email, privateKey, scope) {
   const data = await r.json();
   if (!r.ok) throw new Error((data && (data.error_description || data.error)) || 'google_token_failed');
   return data.access_token;
+}
+
+async function sendEmailAction(body) {
+  const { id, type } = body || {};
+  if (!id || !type) return resp(400, { error: 'Missing "id" or "type".' });
+  if (!mailer.configured()) return resp(400, { error: 'mailer_not_configured' });
+  const map = {
+    acceptance: ['acceptanceEmail', B_ACCEPT_SENT],
+    r7: ['reminder7Email', B_R7],
+    r2: ['reminder2Email', B_R2],
+    checkout: ['checkoutEmail', B_CHECKOUT_SENT],
+  };
+  const entry = map[type];
+  if (!entry) return resp(400, { error: 'Unknown email type.' });
+  const getR = await fetch(`${atUrl(BOOKINGS_TABLE)}/${id}?returnFieldsByFieldId=true`, { headers: atHeaders() });
+  const rec = await getR.json();
+  if (!getR.ok) return resp(getR.status, rec);
+  const f = rec.fields || {};
+  const email = f[B_EMAIL];
+  if (!email) return resp(400, { error: 'no_email' });
+  const both = /apartm|Apartment/i.test(selName(f[B_SPACE]) || '');
+  const payLabel = /Cash|Hotov/i.test(selName(f[B_PAYMENT]) || '') ? 'Cash' : 'JV account';
+  const b = { name: f[B_NAME], checkin: f[B_CHECKIN], checkout: f[B_CHECKOUT], both, party: f[B_PARTY], payLabel, acct: f[B_ACCT] };
+  try {
+    const msg = mailer[entry[0]](b);
+    await mailer.sendEmail(email, msg.subject, msg.html);
+    await fetch(`${atUrl(BOOKINGS_TABLE)}/${id}`, { method: 'PATCH', headers: atHeaders(), body: JSON.stringify({ fields: { [entry[1]]: true } }) });
+    return resp(200, { sent: true, to: email, type });
+  } catch (e) { return resp(500, { error: String((e && e.message) || e) }); }
 }
 
 async function fxRate(body) {

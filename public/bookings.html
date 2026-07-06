@@ -84,6 +84,9 @@ details[open] summary::before{content:"▾ ";}
 .foot{font-size:11.5px;color:var(--soft);margin-top:18px;text-align:center}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--spruce);color:#fff;font-size:13.5px;font-weight:600;padding:11px 16px;border-radius:11px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:80;max-width:90%;text-align:center}
 .reportbtn{margin-top:10px;width:100%;font:inherit;font-weight:700;font-size:14px;color:#fff;background:var(--pine);border:0;border-radius:11px;padding:12px;cursor:pointer}
+.btnrow{display:flex;gap:10px}
+.btnrow .reportbtn{flex:1}
+.emailsbtn{display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none;background:var(--spruce)}
 #repModal{position:fixed;inset:0;z-index:70;background:rgba(20,30,24,.5);display:none;align-items:flex-end;justify-content:center}
 #editModal{position:fixed;inset:0;z-index:72;background:rgba(20,30,24,.5);display:none;align-items:flex-end;justify-content:center}
 #editModal.show{display:flex}
@@ -134,7 +137,10 @@ details[open] summary::before{content:"▾ ";}
     </div>
     <div class="sumrow" id="sumrow"></div>
     <div class="filters" id="filters"></div>
-    <button type="button" id="reportBtn" class="reportbtn">📊 <span class="cs-only">Report pro účetní</span><span class="en-only">Accountant report</span></button>
+    <div class="btnrow">
+      <button type="button" id="reportBtn" class="reportbtn">📊 <span class="cs-only">Report pro účetní</span><span class="en-only">Accountant report</span></button>
+      <a href="/emails.html" class="reportbtn emailsbtn">✉️ <span class="cs-only">E-maily</span><span class="en-only">Emails</span></a>
+    </div>
   </header>
   <div id="app"><div class="loading">…</div></div>
   <div class="foot" id="foot"></div>

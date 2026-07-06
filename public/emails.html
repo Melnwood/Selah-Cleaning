@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SELAH · Emails</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9ede6;--panel:#fff;--panel2:#f5f8f2;--ink:#1b2a22;--soft:#54655a;--line:#d6ddd2;--spruce:#1f3a2e;--pine:#2f5d4a;--pine2:#3c7359;--amber:#a56c15;--done:#2f6b4c;--donebg:#dbeee0;--barn:#a2372a;--barnbg:#f4ddd6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;padding:20px 16px 60px}
+.en-only{display:none}body.lang-en .en-only{display:inline}body.lang-en .cs-only{display:none}
+.wrap{max-width:820px;margin:0 auto}
+.backlink{display:inline-block;color:var(--pine2);text-decoration:none;font-size:13px;font-weight:600;margin-bottom:10px}
+.backlink:hover{text-decoration:underline}
+.brand{display:flex;align-items:center;gap:12px}
+.roof{width:30px;height:30px;flex:none}.roof path{fill:none;stroke:var(--spruce);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.mark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:12px;letter-spacing:.26em;color:var(--amber)}
+h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;margin:0}
+.txt{flex:1;min-width:0}.sub{color:var(--soft);font-size:13px;margin-top:2px}
+.langtog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+.langtog button{font:inherit;font-weight:700;font-size:12px;padding:6px 12px;border:0;background:transparent;color:var(--soft);cursor:pointer}
+.langtog button.on{background:var(--spruce);color:#fff}
+.note{background:var(--panel2);border:1px dashed var(--line);border-radius:11px;padding:10px 12px;font-size:12.5px;color:var(--soft);margin:14px 0}
+.bcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin:10px 0;box-shadow:0 2px 6px rgba(20,30,24,.06)}
+.bhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.bhead .nm{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15.5px}
+.bhead .dt{font-size:12.5px;color:var(--soft);font-family:'Space Mono',monospace}
+.bhead .em{font-size:12px;color:var(--pine2);margin-left:auto}
+.bhead .em.no{color:var(--barn)}
+.cells{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:520px){.cells{grid-template-columns:repeat(2,1fr)}}
+.cell{font:inherit;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:9px 10px;cursor:pointer;transition:border-color .12s,background .12s}
+.cell:hover{border-color:var(--pine2)}
+.cell:disabled{opacity:.5;cursor:not-allowed}
+.cell .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft)}
+.cell .st{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;margin-top:3px}
+.cell.on{background:var(--donebg);border-color:#bfe0cb}
+.cell.on .st{color:var(--done)}
+.cell .dot{width:15px;height:15px;border-radius:999px;border:2px solid var(--soft);display:inline-block;flex:none}
+.cell.on .dot{background:var(--done);border-color:var(--done);position:relative}
+.cell.on .dot::after{content:"✓";color:#fff;font-size:10px;font-weight:800;position:absolute;left:2px;top:-2px}
+.cell.busy{opacity:.6}
+.loading,.empty{text-align:center;color:var(--soft);padding:30px 0}
+.err{background:var(--barnbg);color:var(--barn);border-radius:11px;padding:11px 12px;font-size:13px;margin:10px 0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--spruce);color:#fff;font-size:13.5px;font-weight:600;padding:11px 16px;border-radius:11px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:80;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90%;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.legend{font-size:12px;color:var(--soft);margin:2px 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
+  <div class="brand">
+    <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
+    <div class="txt">
+      <div class="mark">SELAH</div>
+      <h1><span class="cs-only">E-maily hostům</span><span class="en-only">Guest emails</span></h1>
+      <div class="sub"><span class="cs-only">Stav odeslání · klepnutím odešlete nebo znovu odešlete</span><span class="en-only">Sent status · tap a box to send or resend</span></div>
+    </div>
+    <div class="langtog" role="group" aria-label="Jazyk / Language"><button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button></div>
+  </div>
+  <div class="legend"><span class="cs-only">✓ = odesláno. Klepnutím na políčko e-mail odešlete; na již odeslaný pro opětovné odeslání.</span><span class="en-only">✓ = sent. Tap a box to send it; tap a sent one to resend.</span></div>
+  <div id="app"><div class="loading">…</div></div>
+</div>
+<div id="toast"></div>
+
+<script>
+const API='/.netlify/functions/airtable';
+const F={bookedBy:'fldkrWGTZO9xH3tUg',checkin:'fldpmuL8HMEl49AaY',checkout:'fld6qnW9lBTsRze3u',status:'fldpaz8B5NbPQ46pR',email:'fldgNjaFIzrrXFtGp'};
+const EMAILS=[
+  {key:'acceptance',field:'fldyEfAAs7Ot72xBp',cs:'Přijetí',en:'Acceptance'},
+  {key:'r7',field:'fldmGu5DEgUbICdHc',cs:'7 dní předem',en:'7 days'},
+  {key:'r2',field:'fldNMqw98yv5doBnL',cs:'2 dny předem',en:'2 days'},
+  {key:'checkout',field:'fldAgU8UBLkXFjIsy',cs:'Odjezd',en:'Checkout'},
+];
+let LANG=localStorage.getItem('cabin_lang')||'cs';
+let RAW=[];
+function T(cs,en){return LANG==='en'?en:cs;}
+function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function sel(v){return v&&typeof v==='object'?v.name:v;}
+function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
+function promptCode(){const c=prompt(T('Zadejte přístupový kód','Enter access code'));if(c){localStorage.setItem('cabin_code',c);location.reload();}}
+function dstr(d){return d?new Date(String(d).slice(0,10)+'T00:00:00').toLocaleDateString(locale(),{day:'numeric',month:'short'}):'—';}
+function approved(f){return /Schvál|Approved/i.test(sel(f[F.status])||'');}
+let toastT;function toast(m){const el=document.getElementById('toast');el.textContent=m;el.className='show';clearTimeout(toastT);toastT=setTimeout(()=>el.className='',2600);}
+
+function applyLang(){document.body.classList.toggle('lang-en',LANG==='en');document.documentElement.lang=LANG;document.getElementById('btnCs').classList.toggle('on',LANG==='cs');document.getElementById('btnEn').classList.toggle('on',LANG==='en');if(RAW.length)render();}
+document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+
+async function load(){
+  try{
+    const r=await fetch(API+'?t=bookings',{headers:hdr()});
+    if(r.status===401){promptCode();return;}
+    const {records=[]}=await r.json();
+    RAW=records;render();
+  }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst rezervace: ','Could not load bookings: ')+esc(e.message||e)+'</div>';}
+}
+
+function inScope(f){
+  if(!approved(f)||!f[F.checkin])return false;
+  const co=new Date(String(f[F.checkout]||f[F.checkin]).slice(0,10)+'T00:00:00');
+  const floor=new Date();floor.setDate(floor.getDate()-30);floor.setHours(0,0,0,0);
+  const ceil=new Date();ceil.setDate(ceil.getDate()+185);
+  const ci=new Date(String(f[F.checkin]).slice(0,10)+'T00:00:00');
+  return co>=floor && ci<=ceil;
+}
+function render(){
+  const list=RAW.filter(x=>inScope(x.fields)).sort((a,b)=>a.fields[F.checkin]<b.fields[F.checkin]?-1:1);
+  const app=document.getElementById('app');
+  if(!list.length){app.innerHTML='<div class="empty">'+T('Žádné schválené rezervace v tomto období.','No approved bookings in this window.')+'</div>';return;}
+  app.innerHTML=list.map(x=>{
+    const f=x.fields;const hasEmail=!!f[F.email];
+    const cells=EMAILS.map(e=>{
+      const on=!!f[e.field];
+      return `<button class="cell ${on?'on':''}" data-id="${x.id}" data-type="${e.key}" ${hasEmail?'':'disabled'}>
+        <div class="lbl">${T(e.cs,e.en)}</div>
+        <div class="st"><span class="dot"></span>${on?T('Odesláno','Sent'):T('Odeslat','Send')}</div>
+      </button>`;
+    }).join('');
+    return `<div class="bcard" id="c_${x.id}">
+      <div class="bhead">
+        <span class="nm">${esc(f[F.bookedBy]||'—')}</span>
+        <span class="dt">${dstr(f[F.checkin])} – ${dstr(f[F.checkout])}</span>
+        <span class="em ${hasEmail?'':'no'}">${hasEmail?esc(f[F.email]):'⚠ '+T('bez e-mailu','no email')}</span>
+      </div>
+      <div class="cells">${cells}</div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('click',e=>{
+  const c=e.target.closest('.cell');if(!c||c.disabled||c.classList.contains('busy'))return;
+  const id=c.dataset.id,type=c.dataset.type;
+  const rec=RAW.find(x=>x.id===id);const already=rec&&!!rec.fields[EMAILS.find(x=>x.key===type).field];
+  const name=rec?rec.fields[F.bookedBy]:'';
+  const label=T(EMAILS.find(x=>x.key===type).cs,EMAILS.find(x=>x.key===type).en);
+  const q=already
+    ? T('Znovu odeslat „'+label+'" hostu '+name+'?','Resend the "'+label+'" email to '+name+'?')
+    : T('Odeslat „'+label+'" hostu '+name+'?','Send the "'+label+'" email to '+name+'?');
+  if(!confirm(q))return;
+  send(c,id,type);
+});
+async function send(cell,id,type){
+  cell.classList.add('busy');
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'sendEmail',id,type})});
+    if(r.status===401){promptCode();return;}
+    const data=await r.json();
+    if(!r.ok||data.error){throw new Error((data&&(data.error&&data.error.message||data.error))||'send_failed');}
+    const rec=RAW.find(x=>x.id===id);if(rec)rec.fields[EMAILS.find(x=>x.key===type).field]=true;
+    cell.classList.add('on');
+    cell.querySelector('.st').innerHTML='<span class="dot"></span>'+T('Odesláno','Sent');
+    toast(T('Odesláno ✓','Sent ✓'));
+  }catch(err){
+    const msg=String(err.message||err);
+    toast(msg==='mailer_not_configured'?T('E-mail není nastaven (chybí SELAH_FROM_EMAIL).','Email isn\'t set up yet (SELAH_FROM_EMAIL missing).'):(msg==='no_email'?T('Rezervace nemá e-mail.','Booking has no email.'):T('Odeslání selhalo: ','Send failed: ')+msg));
+  }
+  cell.classList.remove('busy');
+}
+
+applyLang();
+load();
+</script>
+</body>
+</html>
