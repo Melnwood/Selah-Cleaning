@@ -200,8 +200,14 @@ function buildCalBookings(items){
   return out;
 }
 function combined(){
+  // Airtable bookings win, but pull the JV account # from a matching calendar event when ours is blank
+  const merged=RAW.map(b=>{
+    if(b.fields[F.acct])return b;
+    const c=CAL.find(c=>c.fields[F.checkin]===b.fields[F.checkin]&&c.fields[F.checkout]===b.fields[F.checkout]&&c.fields[F.acct]&&!/^cash$/i.test(c.fields[F.acct]));
+    return c?{...b,fields:{...b.fields,[F.acct]:c.fields[F.acct]}}:b;
+  });
   const cal=CAL.filter(c=>!RAW.some(b=>b.fields[F.checkin]===c.fields[F.checkin]&&b.fields[F.checkout]===c.fields[F.checkout]));
-  return RAW.concat(cal);
+  return merged.concat(cal);
 }
 
 function windowStart(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1);}
@@ -355,17 +361,17 @@ function reportRows(){
 function renderReport(){
   const rows=reportRows();
   const total=rows.reduce((s,r)=>s+(r.amount||0),0);
-  const head=`<tr><th>${T('Jméno','Name')}</th><th>${T('Termín','Dates')}</th><th>${T('Účet','Account')}</th><th>${T('Číslo JV účtu','JV account #')}</th><th class="r">${T('Částka','Amount')}</th><th>${T('Důvod','Reason')}</th></tr>`;
-  const body=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.dates)}</td><td>${esc(r.account)}</td><td>${esc(r.acct||'—')}</td><td class="r">${esc(r.amountStr||'—')}</td><td>${esc(r.reason||'—')}</td></tr>`).join('');
+  const head=`<tr><th>${T('Jméno','Name')}</th><th>${T('Termín','Dates')}</th><th>${T('Číslo JV účtu','JV account #')}</th><th class="r">${T('Částka','Amount')}</th></tr>`;
+  const body=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.dates)}</td><td>${esc(r.acct||'—')}</td><td class="r">${esc(r.amountStr||'—')}</td></tr>`).join('');
   document.getElementById('repBody').innerHTML=rows.length
-    ?`<table class="reptable">${head}${body}</table><div class="reptotal">${T('Celkem k zaúčtování','Total to charge')}: $${total.toLocaleString('en-US')}</div><div style="font-size:11px;color:var(--soft);margin-top:6px">${T('Období','Window')}: ${windowStart().toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}. ${T('Rezervace z kalendáře nemají uloženou částku ani důvod.','Calendar bookings have no stored amount or reason.')}</div>`
+    ?`<table class="reptable">${head}${body}</table><div class="reptotal">${T('Celkem k zaúčtování','Total to charge')}: $${total.toLocaleString('en-US')}</div><div style="font-size:11px;color:var(--soft);margin-top:6px">${T('Období','Window')}: ${windowStart().toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(windowEnd()-1).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}. ${T('Rezervace jen z kalendáře nemají uloženou částku.','Calendar-only bookings have no stored amount.')}</div>`
     :`<div class="empty">${T('Žádné rezervace ve výhledu.','No bookings in the window.')}</div>`;
   document.getElementById('repModal').classList.add('show');
 }
 function reportTSV(){
   const rows=reportRows();
-  const H=[T('Jméno','Name'),T('Termín','Dates'),T('Účet','Account'),T('Číslo JV účtu','JV account #'),T('Částka','Amount'),T('Důvod','Reason')];
-  return [H.join('\t')].concat(rows.map(r=>[r.name,r.dates,r.account,r.acct,r.amountStr,r.reason].join('\t'))).join('\n');
+  const H=[T('Jméno','Name'),T('Termín','Dates'),T('Číslo JV účtu','JV account #'),T('Částka','Amount')];
+  return [H.join('\t')].concat(rows.map(r=>[r.name,r.dates,r.acct,r.amountStr].join('\t'))).join('\n');
 }
 document.getElementById('reportBtn').onclick=renderReport;
 document.getElementById('repClose').onclick=()=>document.getElementById('repModal').classList.remove('show');

@@ -138,6 +138,12 @@ button:focus-visible,.woitem:focus-visible,.card2:focus-visible{outline:2px soli
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .backlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--pine2,#2f5d4a);text-decoration:none;margin:0 0 12px}
 .backlink:hover{text-decoration:underline}
+.copybtn{width:100%;font:inherit;font-weight:700;font-size:13.5px;color:#fff;background:var(--pine);border:0;border-radius:11px;padding:11px;cursor:pointer;margin-bottom:10px}
+.card2.bk .amt{font-family:'Space Mono',monospace;font-weight:700}
+.markbtn{margin-top:9px;width:100%;font:inherit;font-weight:600;font-size:12.5px;color:var(--pine);background:#eaf1ec;border:1px solid var(--line);border-radius:9px;padding:8px;cursor:pointer}
+.markbtn:hover{border-color:var(--pine2);background:#e2ede6}
+#dtoast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--spruce);color:#fff;font-size:13.5px;font-weight:600;padding:11px 16px;border-radius:11px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:80;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+#dtoast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -197,9 +203,15 @@ const ROOMS=[
   ['fld0GbY18NMS2iZBD','Apartmán','Apartment',140],['fldRYJ8tJASnKp64G','Koupelna v apartmánu','Apartment bathroom',70],['fld4mIbs62ksmPoVr','Okna apartmánu (4)','Apartment windows (4)',225]]}
 ];
 const STATUS={OPEN:'Nové (Open)',PROG:'Probíhá (In Progress)',DONE:'Vyřešeno (Resolved)',WONT:'Neopravovat (Won\u2019t Fix)'};
+const BF={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmuL8HMEl49AaY',checkout:'fld6qnW9lBTsRze3u',
+  party:'fldRuksM0SOYRaJOS',guests:'fldCv5Z6JFuNuNC3G',status:'fldpaz8B5NbPQ46pR',payment:'fldHvsV5XaIiSm5hl',
+  acct:'fldGUaa6bMqkISP4e',purpose:'fld01hHE2rz4WEnFU',reason:'fldRapIBVEQ7hYL7c',
+  collected:'fldnxBOu0XpYQNR83',collectedDate:'fldu7w8wlmCLqsG5a'};
+const RATES={bed:15,util:15,house:50,apt:25};
 let RAW=[],UPCOMING=[],RENT_ERR=null,PERIOD='year';
+let BOOKINGS=[],BK_ERR=null,BK_LOADED=false;
 let LANG=localStorage.getItem('cabin_lang')||'cs';
-const OPEN_SEC={cleaning:true,maintenance:true,payment:true,upcoming:true};
+const OPEN_SEC={cleaning:false,maintenance:false,payment:false,upcoming:false};
 function T(cs,en){return LANG==='en'?en:cs;}
 function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
 function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
@@ -249,6 +261,25 @@ async function load(){
     render();
   }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst data: ','Could not load data: ')+esc(e.message||e)+'</div>';}
 }
+async function loadBookings(){
+  try{
+    const r=await fetch(API+'?t=bookings',{headers:hdr()});
+    if(r.status===401){promptCode();return;}
+    const {records=[]}=await r.json();BOOKINGS=records;BK_ERR=null;
+  }catch(e){BK_ERR='fetch';BOOKINGS=[];}
+  BK_LOADED=true;if(RAW.length)render();
+}
+// ---- booking payments (collection watermark) ----
+function bkNights(f){const a=f[BF.checkin],b=f[BF.checkout];if(!a||!b)return 0;return Math.max(0,Math.round((new Date(b)-new Date(a))/86400000));}
+function bkCost(f){const party=+f[BF.party]||0;const cribs=(f[BF.guests]||'').split('\n').filter(Boolean).filter(g=>/crib|postýlka/i.test(g)).length;const beds=Math.max(0,party-cribs);const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');const n=bkNights(f);return RATES.bed*beds*n+RATES.util*n+RATES.house+(both?RATES.apt:0);}
+function bkApproved(){return BOOKINGS.filter(x=>/Schvál|Approved/i.test(selName(x.fields[BF.status])||''));}
+function bkWatermark(){let top=null;bkApproved().forEach(x=>{if(x.fields[BF.collected]){const d=x.fields[BF.checkin];if(d&&(!top||d>top.date))top={date:d,rec:x};}});return top;}
+function bkOutstanding(){
+  const wm=bkWatermark();const floor=wm?wm.date:(new Date().getFullYear()+'-01-01');const strict=!!wm;
+  return bkApproved().filter(x=>!x.fields[BF.collected]&&x.fields[BF.checkin]&&(strict?x.fields[BF.checkin]>floor:x.fields[BF.checkin]>=floor))
+    .sort((a,b)=>a.fields[BF.checkin]<b.fields[BF.checkin]?-1:1);
+}
+function payLbl(f){const acct=f[BF.acct]||'';const pay=selName(f[BF.payment])||'';return /Cash|Hotov/i.test(pay)?T('Hotově','Cash'):((/account|účet/i.test(pay)||acct)?T('JV účet','JV account'):'—');}
 async function loadRentals(){
   try{
     const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'rentals',days:30})});
@@ -314,14 +345,7 @@ function render(){
     </div>
     ${woPanel(ow)}`)}
 
-  ${section('payment','p','💰',T('Platby','Payment'),owed?kc(owed):'0',owed>0,`
-    <div class="mini">
-      <div class="ministat"><div class="n barn">${kc(owed)}</div><div class="l">${T('Zbývá zaplatit','Owed')}</div></div>
-      <div class="ministat"><div class="n done">${kc(paidTotal)}</div><div class="l">${T('Zaplaceno','Paid')}</div></div>
-      <div class="ministat"><div class="n">${unpaidAll.length}</div><div class="l">${T('Nezaplacené úklidy','Unpaid cleanings')}</div></div>
-      <div class="ministat"><div class="n barn">${fines?kc(fines):'0 Kč'}</div><div class="l">${T('Pokuty hostům','Guest fines')}</div></div>
-    </div>
-    ${unpaidAll.length?('<div style="font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 6px">'+T('Nezaplaceno — od nejstaršího','Unpaid — oldest first')+'</div>'+[...unpaidAll].sort((a,b)=>new Date(whenOf(a))-new Date(whenOf(b))).map(cleaningCard).join('')):('<div class="empty">'+T('Vše zaplaceno. 🎉','All paid. 🎉')+'</div>')}`)}
+  ${paymentSection()}
   `;
 
   // wire accordions
@@ -344,6 +368,53 @@ function section(key,ico,emoji,title,badge,warn,body){
   </div>`;
 }
 function counts(){const c={open:0,prog:0,done:0,wont:0};workOrders().forEach(x=>c[statusKey(statusOf(x.fields))]++);return c;}
+
+function paymentSection(){
+  if(!BK_LOADED)return section('payment','p','💰',T('Platby za rezervace','Booking payments'),'…',false,`<div class="empty">${T('Načítám rezervace…','Loading bookings…')}</div>`);
+  const out=bkOutstanding();
+  const total=out.reduce((s,x)=>s+bkCost(x.fields),0);
+  const wm=bkWatermark();
+  const since=wm?`${esc(wm.rec.fields[BF.bookedBy]||'—')}${wm.rec.fields[BF.collectedDate]?' · '+dstr(wm.rec.fields[BF.collectedDate]):''}`:T('od začátku roku','start of year');
+  const body=`
+    <div class="mini">
+      <div class="ministat"><div class="n barn">$${total.toLocaleString('en-US')}</div><div class="l">${T('K inkasu','To collect')}</div></div>
+      <div class="ministat"><div class="n">${out.length}</div><div class="l">${T('Rezervací','Bookings')}</div></div>
+      <div class="ministat" style="flex:2"><div class="n" style="font-size:14px;line-height:1.2">${since}</div><div class="l">${T('Od posledního inkasa','Since last collected')}</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--soft);margin:2px 0 8px">${T('Rezervace k zaúčtování na JV účty — od posledního inkasovaného hosta po dnešek. Po zaúčtování označte posledního hosta.','Bookings to charge to JV accounts — from the last collected guest through today. After charging, mark the last guest.')}</div>
+    ${out.length?`<button type="button" class="copybtn" data-copybk="1">📋 ${T('Kopírovat pro účetní','Copy for accountant')}</button>`:''}
+    ${out.length?out.map(bkCard).join(''):`<div class="empty">${T('Nic k inkasu. 🎉','Nothing to collect. 🎉')}</div>`}`;
+  return section('payment','p','💰',T('Platby za rezervace','Booking payments'),total?('$'+total.toLocaleString('en-US')):'0',total>0,body);
+}
+function bkCard(x){
+  const f=x.fields;const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');const acct=f[BF.acct]||'';
+  return `<div class="card2 bk">
+    <div class="r1"><span><b>${esc(f[BF.bookedBy]||'—')}</b> · <span class="d">${dstr(f[BF.checkin])} – ${dstr(f[BF.checkout])}</span></span><span class="amt">$${bkCost(f).toLocaleString('en-US')}</span></div>
+    <div class="meta">${payLbl(f)}${acct?' · #'+esc(acct):''} · ${bkNights(f)} ${T('nocí','nights')}${both?' · '+T('+ apartmán','+ apt'):''}</div>
+    <button type="button" class="markbtn" data-mark="${x.id}">✓ ${T('Toto byl poslední inkasovaný','This was my last collected')}</button>
+  </div>`;
+}
+async function markCollected(id){
+  if(!confirm(T('Označit tuto rezervaci jako poslední inkasovanou? Vše po ní se příště zobrazí jako k inkasu.','Mark this booking as the last one collected? Only bookings after it will show as to-collect next time.')))return;
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const r=await fetch(API,{method:'PATCH',headers:hdr(),body:JSON.stringify({table:'bookings',id,fields:{[BF.collected]:true,[BF.collectedDate]:today}})});
+    if(!r.ok)throw new Error('save failed');
+    OPEN_SEC.payment=true;await loadBookings();
+    toast(T('Označeno ✓','Marked ✓'));
+  }catch(e){alert(T('Nepodařilo se uložit.','Could not save.'));}
+}
+function copyBookingReport(){
+  const out=bkOutstanding();
+  const H=[T('Jméno','Name'),T('Termín','Dates'),T('Účet','Account'),T('Číslo JV účtu','JV account #'),T('Částka','Amount'),T('Důvod','Reason')];
+  const rows=out.map(x=>{const f=x.fields;const reason=[optLabel(selName(f[BF.purpose]))||'',f[BF.reason]||''].filter(Boolean).join(' — ');return [f[BF.bookedBy]||'',dstr(f[BF.checkin])+' – '+dstr(f[BF.checkout]),payLbl(f),f[BF.acct]||'','$'+bkCost(f).toLocaleString('en-US'),reason].join('\t');});
+  const total=out.reduce((s,x)=>s+bkCost(x.fields),0);
+  const tsv=[H.join('\t')].concat(rows).concat([['',''
+,'','',T('Celkem','Total')+' $'+total.toLocaleString('en-US'),''].join('\t')]).join('\n');
+  if(navigator.clipboard)navigator.clipboard.writeText(tsv).then(()=>toast(T('Zkopírováno ✓','Copied ✓')),()=>toast(T('Kopírování selhalo','Copy failed')));
+}
+let toastT;
+function toast(m){let el=document.getElementById('dtoast');if(!el){el=document.createElement('div');el.id='dtoast';document.body.appendChild(el);}el.textContent=m;el.className='show';clearTimeout(toastT);toastT=setTimeout(()=>el.className='',2600);}
 
 function monthTable(){
   const cl=cleaningsIn();
@@ -493,6 +564,9 @@ function monthView(key){
 }
 
 document.addEventListener('click',e=>{
+  const mk=e.target.closest('[data-mark]');
+  if(mk){markCollected(mk.dataset.mark);return;}
+  if(e.target.closest('[data-copybk]')){copyBookingReport();return;}
   const t=e.target.closest('[data-open]');
   if(t){const o=t.dataset.open;
     if(o==='list'){stack=[listView(t.dataset.kind)];paint();}
@@ -509,6 +583,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM();if((e.key==
 applyLang();
 load();
 loadRentals();
+loadBookings();
 </script>
 </body>
 </html>
