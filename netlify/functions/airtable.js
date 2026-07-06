@@ -15,6 +15,7 @@
 //   SELAH_CALENDAR_ID      The "04 Selah Calendar" id (…@group.calendar.google.com).
 
 const crypto = require('crypto');
+const mailer = require('./lib/mailer');
 
 const BASE_ID = process.env.AIRTABLE_BASE_ID || 'appfsGzvzFQ6Fbvrs';
 const TABLE_ID = process.env.AIRTABLE_TABLE_ID || 'tblzOQKrXXyzoecYC';
@@ -172,6 +173,7 @@ const B_PARTY = 'fldRuksM0SOYRaJOS', B_GUESTS = 'fldCv5Z6JFuNuNC3G', B_EMAIL = '
   B_PHONE = 'fld1jHbXT1sLuGYfm', B_TEAM = 'fldO7Wq8cW5Pnifbf', B_PURPOSE = 'fld01hHE2rz4WEnFU',
   B_REASON = 'fldRapIBVEQ7hYL7c', B_PAYMENT = 'fldHvsV5XaIiSm5hl', B_ACCT = 'fldGUaa6bMqkISP4e',
   B_EVENTID = 'fldns5wVSVhRiepZR';
+const B_SPACE = 'fldUYaGvdvcV3EZOM', B_ACCEPT_SENT = 'fldyEfAAs7Ot72xBp';
 function selName(v) { return v && typeof v === 'object' ? v.name : v; }
 
 function calTitle(f) {
@@ -250,7 +252,19 @@ async function bookingStatus(body) {
     method: 'PATCH', headers: atHeaders(), body: JSON.stringify({ fields: patch, typecast: true }),
   });
   const pdata = await pr.json();
-  return resp(pr.ok ? 200 : pr.status, Object.assign({ calendar }, pdata));
+  // Acceptance email — sent once, when a booking is approved and has an email on file.
+  let emailed = false;
+  if (pr.ok && approved && f[B_EMAIL] && !f[B_ACCEPT_SENT] && mailer.configured()) {
+    try {
+      const both = /apartm|Apartment/i.test((selName(f[B_SPACE]) || ''));
+      const payLabel = /Cash|Hotov/i.test((selName(f[B_PAYMENT]) || '')) ? 'Cash' : 'JV account';
+      const msg = mailer.acceptanceEmail({ name: f[B_NAME], checkin: f[B_CHECKIN], checkout: f[B_CHECKOUT], both, party: f[B_PARTY], payLabel, acct: f[B_ACCT] });
+      await mailer.sendEmail(f[B_EMAIL], msg.subject, msg.html);
+      await fetch(`${atUrl(BOOKINGS_TABLE)}/${id}`, { method: 'PATCH', headers: atHeaders(), body: JSON.stringify({ fields: { [B_ACCEPT_SENT]: true } }) });
+      emailed = true;
+    } catch (e) { emailed = 'error:' + ((e && e.message) || e); }
+  }
+  return resp(pr.ok ? 200 : pr.status, Object.assign({ calendar, emailed }, pdata));
 }
 
 function resp(statusCode, obj) {

@@ -2,6 +2,10 @@
   publish = "public"
   functions = "netlify/functions"
 
+# Daily at 07:10 UTC (~9am Prague) — sends 7-day and 2-day guest reminders.
+[functions."selah-emails"]
+  schedule = "10 7 * * *"
+
 [[redirects]]
   from = "/cleaner"
   to = "/cleaner.html"
