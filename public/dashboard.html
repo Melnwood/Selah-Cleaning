@@ -280,6 +280,12 @@ function bkOutstanding(){
     .sort((a,b)=>a.fields[BF.checkin]<b.fields[BF.checkin]?-1:1);
 }
 function payLbl(f){const acct=f[BF.acct]||'';const pay=selName(f[BF.payment])||'';return /Cash|Hotov/i.test(pay)?T('Hotově','Cash'):((/account|účet/i.test(pay)||acct)?T('JV účet','JV account'):'—');}
+function reservationsIn(){return bkApproved().filter(x=>inPeriod(x.fields[BF.checkin])).sort((a,b)=>a.fields[BF.checkin]<b.fields[BF.checkin]?-1:1);}
+function upcomingBookings(){
+  const today=new Date();today.setHours(0,0,0,0);const horizon=new Date(today.getTime()+30*86400000);
+  return bkApproved().filter(x=>{const f=x.fields;if(!f[BF.checkin]||!f[BF.checkout])return false;const ci=new Date(f[BF.checkin]),co=new Date(f[BF.checkout]);return co>=today&&ci<=horizon;}).sort((a,b)=>a.fields[BF.checkin]<b.fields[BF.checkin]?-1:1);
+}
+function resCard(x){const f=x.fields;const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');return `<div class="card2"><div class="r1"><span><b>${esc(f[BF.bookedBy]||'—')}</b></span><span class="amt" style="font-family:'Space Mono',monospace;font-weight:700">$${bkCost(f).toLocaleString('en-US')}</span></div><div class="meta">${dstr(f[BF.checkin])} – ${dstr(f[BF.checkout])} · ${bkNights(f)} ${T('nocí','nights')}${both?' · '+T('+ apartmán','+ apt'):''}${f[BF.acct]?' · #'+esc(f[BF.acct]):''}</div></div>`;}
 async function loadRentals(){
   try{
     const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'rentals',days:30})});
@@ -323,11 +329,11 @@ function render(){
   const app=document.getElementById('app');
   app.innerHTML=`
   <div class="kpis">
-    <button class="kpi rent" data-open="list" data-kind="cleanings"><span class="go">↗</span><div class="num">${cl.length}</div><div class="lbl">${T('Pronájmy','Rentals')}</div></button>
+    <button class="kpi rent" data-open="list" data-kind="reservations"><span class="go">↗</span><div class="num">${BK_LOADED?reservationsIn().length:'…'}</div><div class="lbl">${T('Rezervace','Reservations')}</div></button>
     <button class="kpi wo" data-open="list" data-kind="open"><span class="go">↗</span><div class="num">${ow.length}</div><div class="lbl">${T('Zakázky','Work orders')}</div></button>
   </div>
 
-  ${section('upcoming','u','📅',T('Nadcházející pronájmy','Upcoming rentals'),UPCOMING.length,false,upcomingBody())}
+  ${section('upcoming','u','📅',T('Nadcházející pronájmy','Upcoming rentals'),BK_LOADED?upcomingBookings().length:'…',false,upcomingBody())}
 
   ${section('cleaning','c','🧹',T('Úklidy','Cleaning'),cl.length,false,`
     <div class="mini">
@@ -434,15 +440,12 @@ function woPanel(list){
 function woRef(id){return '#'+String(id).slice(-4).toUpperCase();}
 
 function upcomingBody(){
-  if(RENT_ERR==='no_calendar'||RENT_ERR==='no_key')
-    return `<div class="notice">📅 ${T('Nadcházející pronájmy se zobrazí, jakmile bude připojen kalendář „04 Selah".','Upcoming rentals will appear once the “04 Selah” calendar is connected.')}</div>`;
-  if(RENT_ERR)
-    return `<div class="notice" style="border-color:var(--barn);color:var(--barn)">⚠ ${T('Kalendář se nepodařilo načíst. Zkontrolujte, že je „04 Selah" nasdílen se servisním účtem a že jsou nastavené klíče.','Couldn\'t load the calendar. Check that “04 Selah” is shared with the service account and the keys are set.')}<br><span style="opacity:.7;font-size:11px">${esc(RENT_ERR)}</span></div>`;
-  if(!UPCOMING.length)return `<div class="empty">${T('Žádné pronájmy v příštích 30 dnech.','No rentals in the next 30 days.')}</div>`;
-  const MON=["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const fmt=s=>{const d=new Date(s);return MON[d.getMonth()+1]+' '+d.getDate();};
-  return `<div class="rentlist">${UPCOMING.map(r=>`<div class="rent"><span class="when">${fmt(r.start)} – ${fmt(r.end)}</span><span class="nm">${esc(r.name)}</span><span class="clean">🧹 ${fmt(r.end)}</span></div>`).join('')}</div>
-   <div style="font-size:11px;color:var(--soft);margin-top:8px">${T('🧹 = předpokládaný den úklidu (den odjezdu)','🧹 = expected cleaning day (checkout)')}</div>`;
+  if(!BK_LOADED)return `<div class="empty">${T('Načítám…','Loading…')}</div>`;
+  if(BK_ERR)return `<div class="notice" style="border-color:var(--barn);color:var(--barn)">⚠ ${T('Rezervace se nepodařilo načíst.','Couldn\'t load bookings.')}</div>`;
+  const list=upcomingBookings();
+  if(!list.length)return `<div class="empty">${T('Žádné pronájmy v příštích 30 dnech.','No rentals in the next 30 days.')}</div>`;
+  return `<div class="rentlist">${list.map(x=>{const f=x.fields;const both=/apartm|Apartment/i.test(selName(f[BF.space])||'');
+    return `<div class="rent"><span class="when">${dstr(f[BF.checkin],{day:'numeric',month:'short'})} – ${dstr(f[BF.checkout],{day:'numeric',month:'short'})}</span><span class="nm">${esc(f[BF.bookedBy]||'—')}</span><span class="clean">${bkNights(f)} ${T('nocí','nights')}${both?' · +apt':''}</span></div>`;}).join('')}</div>`;
 }
 
 // ---- modal / drill-down ----
@@ -454,8 +457,9 @@ function closeM(){stack=[];document.getElementById('modal').classList.remove('sh
 function empty(){return `<div class="empty">${T('Nic k zobrazení.','Nothing to show.')}</div>`;}
 
 function listView(kind){
-  const titles={cleanings:T('Pronájmy / úklidy','Rentals / cleanings'),fines:T('Pokuty hostům','Guest fines'),open:T('Otevřené zakázky','Open work orders')};
+  const titles={cleanings:T('Pronájmy / úklidy','Rentals / cleanings'),reservations:T('Rezervace','Reservations'),fines:T('Pokuty hostům','Guest fines'),open:T('Otevřené zakázky','Open work orders')};
   return {title:()=>titles[kind]||'',body:()=>{
+    if(kind==='reservations'){const l=reservationsIn();return l.length?l.map(resCard).join(''):empty();}
     if(kind==='open'){const l=openWOs();return l.length?l.map(woCard).join(''):empty();}
     let l=cleaningsIn();
     if(kind==='fines')l=l.filter(x=>(x.fields[F.fines]||0)>0);
