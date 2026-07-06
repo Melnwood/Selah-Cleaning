@@ -40,3 +40,8 @@
   from = "/emails"
   to = "/emails.html"
   status = 200
+
+[[redirects]]
+  from = "/reports"
+  to = "/reports.html"
+  status = 200

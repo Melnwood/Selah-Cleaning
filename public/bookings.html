@@ -47,8 +47,7 @@ header{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px
 .rangerow .rl{font-size:12px}
 .rangerow input[type=date]{font:inherit;font-size:13px;font-weight:500;padding:6px 9px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
 .rangerow #lClear{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--barn,#a2372a);border-radius:8px;padding:6px 10px;cursor:pointer}
-.btn.pay{background:#fff;border-color:#e5b94e;color:#8a6d1e;flex:none;padding:12px 12px}
-.btn.pay.ispaid{background:var(--donebg,#dbeee0);border-color:#bfe0cb;color:var(--done,#2f6b4c)}
+.btn.pay{background:#fff;border-color:var(--line);color:var(--pine);flex:none;padding:12px 12px}
 .btn.emails{background:#eef3ec;border-color:var(--line);color:var(--pine);flex:none;padding:12px 12px}
 .emailpanel{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel2,#f5f8f2);padding:12px}
 .epto{font-size:12px;color:var(--soft);margin-bottom:8px}
@@ -76,6 +75,9 @@ header{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px
 .bk .who{font-size:13.5px;color:var(--soft);margin-top:2px}
 .badge{font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;flex:none}
 .badge.req{background:var(--pendbg);color:var(--pend)} .badge.ok{background:var(--donebg);color:var(--done)} .badge.no{background:var(--barnbg);color:var(--barn)}
+.badges{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:none}
+.badge.paid{background:var(--donebg,#dbeee0);color:var(--done,#2f6b4c);border:1px solid #bfe0cb}
+.badge.unpaid{background:#faf1d8;color:#8a6d1e;border:1px solid #e5cf8f}
 .badge.cal{background:#e6eef5;color:#2f5d7a}
 .notice-cal{background:#eef3f7;border:1px dashed #b8ccd9;color:#3a5a70;border-radius:11px;padding:10px 12px;font-size:12.5px;margin-bottom:10px}
 .meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px}
@@ -130,7 +132,8 @@ details[open] summary::before{content:"▾ ";}
 .rephead{position:sticky;top:0;background:#fff;display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);z-index:2}
 .rephead .title{flex:1;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px}
 .repactions{display:flex;gap:6px}
-.repactions button{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--pine);border-radius:9px;padding:7px 11px;cursor:pointer}
+.repactions button,.repactions a{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--pine);border-radius:9px;padding:7px 11px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+.repactions .repprimary{background:var(--spruce);border-color:var(--spruce);color:#fff}
 .reprange{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:600;color:var(--soft);flex-wrap:wrap}
 .reprange input[type=date]{font:inherit;font-size:13px;font-weight:500;padding:6px 9px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
 .represet{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--pine);border-radius:8px;padding:6px 10px;cursor:pointer;margin-left:auto}
@@ -185,6 +188,9 @@ details[open] summary::before{content:"▾ ";}
     <div class="rephead">
       <div class="title"><span class="cs-only">Report pro účetní</span><span class="en-only">Accountant report</span></div>
       <div class="repactions">
+        <button type="button" id="repSince" class="repprimary">🆕 <span class="cs-only">Od minule</span><span class="en-only">Since last</span></button>
+        <button type="button" id="repSave">💾 <span class="cs-only">Uložit</span><span class="en-only">Save</span></button>
+        <a href="/reports.html" id="repHist">🗂 <span class="cs-only">Historie</span><span class="en-only">History</span></a>
         <button type="button" id="repCopy"><span class="cs-only">Kopírovat</span><span class="en-only">Copy</span></button>
         <button type="button" id="repPrint"><span class="cs-only">Tisk</span><span class="en-only">Print</span></button>
         <button type="button" id="repClose">✕</button>
@@ -412,7 +418,7 @@ function render(){
       <div class="top">
         <div><div class="dates">${human(f[F.checkin])} → ${human(f[F.checkout])}</div>
           <div class="who">${esc(f[F.bookedBy]||'—')} · ${nights(f)} ${T('nocí','nights')}</div></div>
-        ${badge}
+        <div class="badges">${badge}${k!=='no'?(f[F.collected]?`<span class="badge paid">💵 ${T('ZAPLACENO','PAID')}</span>`:`<span class="badge unpaid">● ${T('NEZAPLACENO','UNPAID')}</span>`):''}</div>
       </div>
       <div class="meta">
         <span>🏠 ${esc(/apartm|Apartment/i.test(sel(f[F.space])||'')?T('Dům + apartmán','House + apt'):T('Hlavní dům','Main house'))}</span>
@@ -439,7 +445,7 @@ function render(){
       </details>
       <div class="actions">
         <button class="btn edit" data-edit="${x.id}">✏️ ${T('Upravit','Edit')}</button>
-        <button class="btn pay ${f[F.collected]?'ispaid':''}" data-pay="${x.id}" data-paid="${f[F.collected]?1:0}">${f[F.collected]?'💵 '+T('Zaplaceno','Paid'):'○ '+T('Označit zaplaceno','Mark paid')}</button>
+        <button class="btn pay" data-pay="${x.id}" data-paid="${f[F.collected]?1:0}">${f[F.collected]?'↩ '+T('Označit nezaplaceno','Mark unpaid'):'✓ '+T('Označit zaplaceno','Mark paid')}</button>
         <button class="btn emails" data-emails="${x.id}">✉️ ${T('E-maily','Emails')}${emailSentCount(f)>0?' '+emailSentCount(f)+'/4':''}</button>
         ${k==='req'?`<button class="btn accept" data-accept="${x.id}">✓ ${T('Přijmout','Accept')}</button><button class="btn decline" data-decline="${x.id}">${T('Zamítnout','Decline')}</button>`
           :k==='ok'?`<button class="btn decline" data-decline="${x.id}">${T('Zrušit schválení','Undo approval')}</button>`
@@ -530,6 +536,7 @@ async function getRate(dateISO){
   return fxCache[dateISO];
 }
 let LAST_REPORT={jv:[],cash:[]};
+let LAST_META={count:0,jvTotal:0,cashUsd:0,cashCzk:0};
 function winNote(){return `${T('Období','Range')}: ${new Date(REP_FROM).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})} – ${new Date(REP_TO).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}`;}
 async function renderReport(){
   const bodyEl=document.getElementById('repBody');
@@ -548,6 +555,7 @@ async function renderReport(){
   const jvTotal=jv.reduce((s,r)=>s+(r.amount||0),0);
   const cashUsd=cash.reduce((s,r)=>s+(r.amount||0),0);
   const cashCzk=cash.reduce((s,r)=>s+(r.czk||0),0);
+  LAST_META={count:rows.length,jvTotal,cashUsd,cashCzk};
   const kc=n=>n.toLocaleString('cs-CZ')+' Kč';
   let html='';
   html+=`<div class="repsec">💳 ${T('JV účty','JV accounts')}</div>`;
@@ -577,6 +585,44 @@ function reportTSV(){
   return L.join('\n');
 }
 document.getElementById('reportBtn').onclick=renderReport;
+async function sinceLast(){
+  try{
+    const r=await fetch(API+'?t=reportruns',{headers:hdr()});
+    if(r.status===401){toast(T('Chybný přístupový kód.','Wrong access code.'));return;}
+    const {records=[]}=await r.json();
+    const today=new Date().toISOString().slice(0,10);
+    let start;
+    if(records.length){
+      const ends=records.map(x=>x.fields['fldm6NTny9GYWpeSZ']).filter(Boolean).map(s=>String(s).slice(0,10)).sort();
+      const lastEnd=ends[ends.length-1];
+      const dt=new Date(lastEnd+'T00:00:00');dt.setDate(dt.getDate()+1);
+      start=dt.toISOString().slice(0,10);
+    }else{
+      const cis=combined().map(x=>x.fields[F.checkin]).filter(Boolean).map(s=>String(s).slice(0,10)).sort();
+      start=cis.length?cis[0]:today;
+    }
+    REP_FROM=start;REP_TO=today;
+    renderReport();
+    toast(records.length?T('Období od minulého reportu','Set to since last report'):T('První report — vše po dnešek','First report — everything through today'));
+  }catch(e){toast(T('Nepodařilo se načíst historii.','Couldn\'t load history.'));}
+}
+async function saveRun(){
+  if(!REP_FROM||!REP_TO){toast(T('Nejprve nastavte období.','Set a range first.'));return;}
+  const fmt=s=>new Date(s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  const period=`${fmt(REP_FROM)} – ${fmt(REP_TO)}`;
+  if(!confirm(T('Uložit tento report do historie?\n','Save this report to history?\n')+period))return;
+  const m=LAST_META;
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'saveReportRun',period,start:REP_FROM,end:REP_TO,runDate:new Date().toISOString().slice(0,10),bookings:m.count,jvTotal:m.jvTotal,cashUSD:m.cashUsd,cashCZK:m.cashCzk})});
+    if(r.status===401){toast(T('Chybný přístupový kód.','Wrong access code.'));return;}
+    const data=await r.json();
+    if(!r.ok||data.error)throw new Error((data&&(data.error&&data.error.message||data.error))||'save_failed');
+    toast(T('Uloženo do historie ✓','Saved to history ✓'));
+  }catch(e){toast(T('Uložení selhalo: ','Save failed: ')+(e.message||e));}
+}
+document.getElementById('repSince').onclick=sinceLast;
+document.getElementById('repSave').onclick=saveRun;
+if(new URLSearchParams(location.search).get('since')==='1')setTimeout(sinceLast,400);
 document.getElementById('repFrom').onchange=e=>{REP_FROM=e.target.value;renderReport();};
 document.getElementById('repTo').onchange=e=>{REP_TO=e.target.value;renderReport();};
 document.getElementById('repReset').onclick=()=>{const def=repDefaults();REP_FROM=def.from;REP_TO=def.to;renderReport();};

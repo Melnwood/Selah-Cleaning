@@ -20,6 +20,7 @@ const mailer = require('./lib/mailer');
 const BASE_ID = process.env.AIRTABLE_BASE_ID || 'appfsGzvzFQ6Fbvrs';
 const TABLE_ID = process.env.AIRTABLE_TABLE_ID || 'tblzOQKrXXyzoecYC';
 const BOOKINGS_TABLE = process.env.BOOKINGS_TABLE_ID || 'tbl83YSq8GaWNkPf3';
+const REPORTRUNS_TABLE = process.env.REPORTRUNS_TABLE_ID || 'tblX7Tl7YNn4lJwtr';
 const TOKEN = process.env.AIRTABLE_TOKEN;
 const ACCESS_CODE = process.env.ACCESS_CODE || '';
 
@@ -47,6 +48,7 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'GET') {
       const t = (event.queryStringParameters || {}).t;
       if (t === 'bookings') return resp(200, { records: await listAll(BOOKINGS_TABLE) });
+      if (t === 'reportruns') return resp(200, { records: await listAll(REPORTRUNS_TABLE) });
       return resp(200, { records: await listAll(TABLE_ID) });
     }
 
@@ -58,6 +60,7 @@ exports.handler = async (event) => {
       if (body.action === 'bookingStatus') return await bookingStatus(body);
       if (body.action === 'fx') return await fxRate(body);
       if (body.action === 'sendEmail') return await sendEmailAction(body);
+      if (body.action === 'saveReportRun') return await saveReportRun(body);
       if (!body.fields || typeof body.fields !== 'object') return resp(400, { error: 'Missing "fields".' });
       const r = await fetch(AT, {
         method: 'POST',
@@ -319,6 +322,23 @@ async function googleToken(email, privateKey, scope) {
   const data = await r.json();
   if (!r.ok) throw new Error((data && (data.error_description || data.error)) || 'google_token_failed');
   return data.access_token;
+}
+
+async function saveReportRun(body) {
+  const b = body || {};
+  const fields = {
+    fldmf1hlIhuVeTisE: b.period || '',
+    fld71WPlLe2fbPPFN: b.start || null,
+    fldm6NTny9GYWpeSZ: b.end || null,
+    fld2gRVTWegfXx4M7: b.runDate || new Date().toISOString().slice(0, 10),
+    fldr0vgt5lZk8lP8X: Number(b.bookings) || 0,
+    fldj3BNVaiMgUA80l: Number(b.jvTotal) || 0,
+    fldBP3iIyLGvgPe2n: Number(b.cashUSD) || 0,
+    fld0MncJRdZ3CA64f: Number(b.cashCZK) || 0,
+  };
+  const r = await fetch(atUrl(REPORTRUNS_TABLE), { method: 'POST', headers: atHeaders(), body: JSON.stringify({ fields }) });
+  const data = await r.json();
+  return resp(r.ok ? 200 : r.status, data);
 }
 
 async function sendEmailAction(body) {

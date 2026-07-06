@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SELAH · Report history</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9ede6;--panel:#fff;--panel2:#f5f8f2;--ink:#1b2a22;--soft:#54655a;--line:#d6ddd2;--spruce:#1f3a2e;--pine:#2f5d4a;--pine2:#3c7359;--amber:#a56c15;--done:#2f6b4c;--donebg:#dbeee0;--barn:#a2372a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;padding:20px 16px 60px}
+.en-only{display:none}body.lang-en .en-only{display:inline}body.lang-en .cs-only{display:none}
+.wrap{max-width:760px;margin:0 auto}
+.backlink{display:inline-block;color:var(--pine2);text-decoration:none;font-size:13px;font-weight:600;margin-bottom:10px}
+.backlink:hover{text-decoration:underline}
+.brand{display:flex;align-items:center;gap:12px}
+.roof{width:30px;height:30px;flex:none}.roof path{fill:none;stroke:var(--spruce);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.mark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:12px;letter-spacing:.26em;color:var(--amber)}
+h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;margin:0}
+.txt{flex:1;min-width:0}.sub{color:var(--soft);font-size:13px;margin-top:2px}
+.langtog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+.langtog button{font:inherit;font-weight:700;font-size:12px;padding:6px 12px;border:0;background:transparent;color:var(--soft);cursor:pointer}
+.langtog button.on{background:var(--spruce);color:#fff}
+.newbtn{display:block;width:100%;margin:16px 0;font:inherit;font-weight:700;font-size:15px;color:#fff;background:var(--spruce);border:0;border-radius:12px;padding:14px;cursor:pointer;text-decoration:none;text-align:center}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin:10px 0;box-shadow:0 2px 6px rgba(20,30,24,.06)}
+.card .rng{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px}
+.card .meta{font-size:12.5px;color:var(--soft);margin-top:2px;font-family:'Space Mono',monospace}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+@media(max-width:520px){.grid{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--soft)}
+.stat .v{font-family:'Space Mono',monospace;font-weight:700;font-size:15px;margin-top:2px}
+.loading,.empty{text-align:center;color:var(--soft);padding:30px 0}
+.err{background:#f4ddd6;color:var(--barn);border-radius:11px;padding:11px 12px;font-size:13px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="backlink">← <span class="cs-only">Nabídka</span><span class="en-only">Menu</span></a>
+  <div class="brand">
+    <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
+    <div class="txt">
+      <div class="mark">SELAH</div>
+      <h1><span class="cs-only">Historie reportů</span><span class="en-only">Report history</span></h1>
+      <div class="sub"><span class="cs-only">Účetní reporty · každý navazuje na předchozí</span><span class="en-only">Accountant reports · each picks up where the last ended</span></div>
+    </div>
+    <div class="langtog" role="group" aria-label="Jazyk / Language"><button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button></div>
+  </div>
+  <a href="/bookings.html?report=1&since=1" class="newbtn">🆕 <span class="cs-only">Nový report od minule</span><span class="en-only">New report since last time</span></a>
+  <div id="app"><div class="loading">…</div></div>
+</div>
+
+<script>
+const API='/.netlify/functions/airtable';
+const R={period:'fldmf1hlIhuVeTisE',start:'fld71WPlLe2fbPPFN',end:'fldm6NTny9GYWpeSZ',runDate:'fld2gRVTWegfXx4M7',bookings:'fldr0vgt5lZk8lP8X',jv:'fldj3BNVaiMgUA80l',cashUSD:'fldBP3iIyLGvgPe2n',cashCZK:'fld0MncJRdZ3CA64f'};
+let LANG=localStorage.getItem('cabin_lang')||'cs';
+function T(cs,en){return LANG==='en'?en:cs;}
+function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
+function promptCode(){const c=prompt(T('Zadejte přístupový kód','Enter access code'));if(c){localStorage.setItem('cabin_code',c);location.reload();}}
+function dstr(d){return d?new Date(String(d).slice(0,10)+'T00:00:00').toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'}):'—';}
+function usd(n){return '$'+(Number(n)||0).toLocaleString('en-US',{maximumFractionDigits:2});}
+function czk(n){return (Number(n)||0).toLocaleString('cs-CZ')+' Kč';}
+
+function applyLang(){document.body.classList.toggle('lang-en',LANG==='en');document.documentElement.lang=LANG;document.getElementById('btnCs').classList.toggle('on',LANG==='cs');document.getElementById('btnEn').classList.toggle('on',LANG==='en');if(window.__R)render(window.__R);}
+document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+
+async function load(){
+  try{
+    const r=await fetch(API+'?t=reportruns',{headers:hdr()});
+    if(r.status===401){promptCode();return;}
+    const {records=[]}=await r.json();
+    window.__R=records;render(records);
+  }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst historii: ','Could not load history: ')+esc(e.message||e)+'</div>';}
+}
+function render(records){
+  const list=records.slice().sort((a,b)=>{const ea=a.fields[R.end]||a.fields[R.runDate]||'',eb=b.fields[R.end]||b.fields[R.runDate]||'';return ea<eb?1:-1;});
+  const app=document.getElementById('app');
+  if(!list.length){app.innerHTML='<div class="empty">'+T('Zatím žádné uložené reporty. Klepněte na „Nový report od minule".','No saved reports yet. Tap "New report since last time".')+'</div>';return;}
+  app.innerHTML=list.map(x=>{const f=x.fields;
+    return `<div class="card">
+      <div class="rng">${esc(f[R.period]||(dstr(f[R.start])+' – '+dstr(f[R.end])))}</div>
+      <div class="meta">${T('Spuštěno','Run')}: ${dstr(f[R.runDate])}</div>
+      <div class="grid">
+        <div class="stat"><div class="l">${T('Rezervace','Bookings')}</div><div class="v">${f[R.bookings]||0}</div></div>
+        <div class="stat"><div class="l">${T('JV účty','JV total')}</div><div class="v">${usd(f[R.jv])}</div></div>
+        <div class="stat"><div class="l">${T('Hotovost','Cash')}</div><div class="v">${usd(f[R.cashUSD])}</div></div>
+      </div>
+      ${f[R.cashCZK]?`<div class="meta" style="margin-top:8px">${T('Hotovost CZK','Cash CZK')}: ${czk(f[R.cashCZK])}</div>`:''}
+    </div>`;
+  }).join('');
+}
+applyLang();
+load();
+</script>
+</body>
+</html>
