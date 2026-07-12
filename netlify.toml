@@ -45,3 +45,13 @@
   from = "/reports"
   to = "/reports.html"
   status = 200
+
+[[redirects]]
+  from = "/cleaning"
+  to = "/cleaning.html"
+  status = 200
+
+[[redirects]]
+  from = "/management"
+  to = "/management.html"
+  status = 200

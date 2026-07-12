@@ -4,32 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SELAH</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#1f3a2e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#e9ede6;--panel:#fff;--ink:#1b2a22;--soft:#54655a;--line:#d6ddd2;--spruce:#1f3a2e;--pine2:#3c7359}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px}
-.wrap{max-width:440px;width:100%}
+:root{--bg:#e9ede6;--panel:#fff;--ink:#1b2a22;--soft:#54655a;--line:#d6ddd2;--spruce:#1f3a2e;--pine2:#3c7359;--amber:#a56c15}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.wrap{max-width:460px;width:100%}
 .en-only{display:none}body.lang-en .en-only{display:inline}body.lang-en .cs-only{display:none}
-.top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-.roof{width:34px;height:34px}.roof path{fill:none;stroke:var(--spruce);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
-h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;margin:0;letter-spacing:-.01em;flex:1}
+.top{display:flex;align-items:center;gap:12px}
+.icon{width:46px;height:46px;border-radius:13px;flex:none}
+.mark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:12px;letter-spacing:.26em;color:var(--amber)}
+h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;margin:0;letter-spacing:-.01em}
+.txt{flex:1;min-width:0}
 .langtog{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
 .langtog button{font:inherit;font-weight:700;font-size:12px;padding:6px 12px;border:0;background:transparent;color:var(--soft);cursor:pointer}
 .langtog button.on{background:var(--spruce);color:#fff}
-.sub{color:var(--soft);font-size:13px;margin:2px 0 22px 46px}
-a.tile{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:12px 0;text-decoration:none;color:inherit;transition:border-color .12s,transform .12s}
-a.tile:hover{border-color:var(--pine2);transform:translateY(-1px)}
-.ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none;font-size:22px}
-.ic.c{background:#eaf1ec}.ic.p{background:#f5ead2}.ic.m{background:#f4ddd6}
-.t{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px}
-.d{font-size:12.5px;color:var(--soft);margin-top:2px}
-.arr{margin-left:auto;color:var(--pine2);font-size:20px}
-.grouplbl{display:flex;align-items:center;gap:8px;margin:22px 0 2px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:13px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
-.grouplbl::before{content:"💰";font-size:15px}
-.grouplbl::after{content:"";flex:1;height:1px;background:var(--line)}
-.sub-group a.tile{margin-left:16px;border-left:3px solid #e5b94e}
+.sub{color:var(--soft);font-size:13.5px;margin:14px 0 20px}
+a.role{display:flex;align-items:center;gap:15px;background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:19px;margin:12px 0;text-decoration:none;color:inherit;transition:border-color .12s,transform .12s,box-shadow .12s}
+a.role:hover{border-color:var(--pine2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(20,30,24,.08)}
+.ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;flex:none;font-size:25px}
+.ic.c{background:#eaf1ec}.ic.m{background:#f4ddd6}.ic.g{background:#f5ead2}
+.t{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px}
+.d{font-size:12.5px;color:var(--soft);margin-top:3px;line-height:1.45}
+.arr{margin-left:auto;color:var(--pine2);font-size:21px}
+.bookline{margin-top:20px;text-align:center;font-size:13px;color:var(--soft)}
+.bookline a{color:var(--pine2);font-weight:700;text-decoration:none}
+.bookline a:hover{text-decoration:underline}
 .foot{font-size:11.5px;color:var(--soft);text-align:center;margin-top:22px}
 button:focus-visible,a:focus-visible{outline:2px solid var(--pine2);outline-offset:2px}
 </style>
@@ -37,24 +43,45 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--pine2);outline-offs
 <body>
 <div class="wrap">
   <div class="top">
-    <svg class="roof" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 15 L14 5 L25 15 M6 13 V24 H22 V13"/></svg>
-    <h1>SELAH</h1>
+    <img src="/icon.svg" alt="" class="icon">
+    <div class="txt">
+      <div class="mark">SELAH</div>
+      <h1><span class="cs-only">Selah</span><span class="en-only">Selah</span></h1>
+    </div>
     <div class="langtog" role="group" aria-label="Jazyk / Language"><button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button></div>
   </div>
-  <div class="sub"><span class="cs-only">Úklid a údržba</span><span class="en-only">Cleaning &amp; maintenance</span></div>
+  <div class="sub"><span class="cs-only">Vyberte, kam jdete.</span><span class="en-only">Choose where you're headed.</span></div>
 
-  <a class="tile" href="/dashboard.html"><div class="ic p">📊</div><div><div class="t"><span class="cs-only">Manažerský přehled</span><span class="en-only">Management overview</span></div><div class="d"><span class="cs-only">Úklidy, platby, opravy — přehled</span><span class="en-only">Cleaning, pay &amp; repairs — overview</span></div></div><div class="arr">→</div></a>
-  <a class="tile" href="/bookings.html"><div class="ic p">✅</div><div><div class="t"><span class="cs-only">Správa rezervací</span><span class="en-only">Reservation administration</span></div><div class="d"><span class="cs-only">Přijměte žádosti · 3 měsíce dopředu</span><span class="en-only">Accept requests · next 3 months</span></div></div><div class="arr">→</div></a>
-  <a class="tile" href="/book.html"><div class="ic p">📅</div><div><div class="t"><span class="cs-only">Rezervovat Selah</span><span class="en-only">Book Selah</span></div><div class="d"><span class="cs-only">Kalendář a žádost o rezervaci (pracovníci JV)</span><span class="en-only">Availability &amp; booking request (JV staff)</span></div></div><div class="arr">→</div></a>
-  <a class="tile" href="/cleaner.html"><div class="ic c">🧹</div><div><div class="t"><span class="cs-only">Formulář úklidu</span><span class="en-only">Cleaning form</span></div><div class="d"><span class="cs-only">Pro uklízeče</span><span class="en-only">For cleaners</span></div></div><div class="arr">→</div></a>
-  <a class="tile" href="/emails.html"><div class="ic p">✉️</div><div><div class="t"><span class="cs-only">E-maily hostům</span><span class="en-only">Guest emails</span></div><div class="d"><span class="cs-only">Stav odeslání &amp; znovu odeslat</span><span class="en-only">Sent status &amp; resend</span></div></div><div class="arr">→</div></a>
-  <a class="tile" href="/reports.html"><div class="ic p">🗂️</div><div><div class="t"><span class="cs-only">Historie reportů</span><span class="en-only">Report history</span></div><div class="d"><span class="cs-only">Účetní reporty od minule</span><span class="en-only">Accounting reports since last time</span></div></div><div class="arr">→</div></a>
+  <a class="role" href="/cleaning.html">
+    <div class="ic c">🧹</div>
+    <div>
+      <div class="t"><span class="cs-only">Úklid</span><span class="en-only">Cleaning</span></div>
+      <div class="d"><span class="cs-only">Kdo tu byl · nahlásit úklid · nahlásit a sledovat opravy</span><span class="en-only">Who was here · log a cleaning · report &amp; track repairs</span></div>
+    </div>
+    <div class="arr">→</div>
+  </a>
 
-  <div class="grouplbl"><span class="cs-only">Platby</span><span class="en-only">Payments</span></div>
-  <div class="sub-group">
-    <a class="tile" href="/payments.html"><div class="ic p">🧹</div><div><div class="t"><span class="cs-only">Úklid</span><span class="en-only">Cleaning</span></div><div class="d"><span class="cs-only">Odměny uklízeče podle měsíce · zaplaceno</span><span class="en-only">Cleaner pay by month · paid status</span></div></div><div class="arr">→</div></a>
-    <a class="tile" href="/bookings.html?report=1"><div class="ic p">🧾</div><div><div class="t"><span class="cs-only">Platby za rezervace</span><span class="en-only">Payments for bookings</span></div><div class="d"><span class="cs-only">Report pro účetní — částky k zaúčtování</span><span class="en-only">Accountant report — amounts to charge</span></div></div><div class="arr">→</div></a>
-    <a class="tile" href="/maintenance.html"><div class="ic m">🔧</div><div><div class="t"><span class="cs-only">Zakázky údržby</span><span class="en-only">Maintenance orders</span></div><div class="d"><span class="cs-only">Opravy, stav a průběh</span><span class="en-only">Repairs, status &amp; progress</span></div></div><div class="arr">→</div></a>
+  <a class="role" href="/maintenance.html">
+    <div class="ic m">🔧</div>
+    <div>
+      <div class="t"><span class="cs-only">Údržba</span><span class="en-only">Maintenance</span></div>
+      <div class="d"><span class="cs-only">Zakázky oprav — stav, priorita a průběh</span><span class="en-only">Repair work orders — status, priority &amp; progress</span></div>
+    </div>
+    <div class="arr">→</div>
+  </a>
+
+  <a class="role" href="/management.html">
+    <div class="ic g">📊</div>
+    <div>
+      <div class="t">Management</div>
+      <div class="d"><span class="cs-only">Rezervace, platby, reporty a celkový přehled</span><span class="en-only">Registration, payments, reports &amp; the full picture</span></div>
+    </div>
+    <div class="arr">→</div>
+  </a>
+
+  <div class="bookline">
+    <span class="cs-only">Chcete si rezervovat pobyt?</span><span class="en-only">Want to book a stay?</span>
+    <a href="/book.html"><span class="cs-only">Rezervovat Selah →</span><span class="en-only">Book Selah →</span></a>
   </div>
 
   <div class="foot">Josiah Venture · Selah</div>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Selah — log cabin">
+  <rect width="512" height="512" rx="112" fill="#1f3a2e"/>
+
+  <!-- smoke -->
+  <g fill="none" stroke="#cfe0d3" stroke-linecap="round">
+    <path d="M348 150 C 328 132, 372 116, 352 96 C 336 80, 366 64, 356 48" stroke-width="16"/>
+    <path d="M300 128 C 288 116, 312 106, 302 92" stroke-width="10" opacity="0.6"/>
+  </g>
+
+  <!-- chimney (behind roof) -->
+  <g fill="#dfe7d9">
+    <rect x="320" y="150" width="46" height="120" rx="6"/>
+    <rect x="310" y="142" width="66" height="22" rx="7"/>
+  </g>
+
+  <!-- roof -->
+  <path d="M256 132 L 452 288 L 420 288 L 256 168 L 92 288 L 60 288 Z" fill="#dfe7d9"/>
+  <path d="M256 168 L 420 288 L 92 288 Z" fill="#2f5d4a"/>
+
+  <!-- cabin body: stacked logs -->
+  <g>
+    <rect x="112" y="288" width="288" height="132" rx="10" fill="#dfe7d9"/>
+    <g stroke="#1f3a2e" stroke-width="5" opacity="0.30">
+      <line x1="112" y1="321" x2="400" y2="321"/>
+      <line x1="112" y1="354" x2="400" y2="354"/>
+      <line x1="112" y1="387" x2="400" y2="387"/>
+    </g>
+  </g>
+
+  <!-- door -->
+  <path d="M224 420 L 224 352 a 32 32 0 0 1 64 0 L 288 420 Z" fill="#2f5d4a"/>
+  <circle cx="276" cy="388" r="6" fill="#a56c15"/>
+
+  <!-- windows, lit -->
+  <g fill="#a56c15">
+    <rect x="146" y="322" width="46" height="46" rx="6"/>
+    <rect x="320" y="322" width="46" height="46" rx="6"/>
+  </g>
+  <g stroke="#dfe7d9" stroke-width="5" opacity="0.85">
+    <line x1="169" y1="322" x2="169" y2="368"/>
+    <line x1="146" y1="345" x2="192" y2="345"/>
+    <line x1="343" y1="322" x2="343" y2="368"/>
+    <line x1="320" y1="345" x2="366" y2="345"/>
+  </g>
+
+  <!-- ground -->
+  <rect x="88" y="420" width="336" height="14" rx="7" fill="#a56c15" opacity="0.55"/>
+</svg>
