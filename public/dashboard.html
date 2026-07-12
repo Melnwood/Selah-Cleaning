@@ -218,6 +218,30 @@ const BF={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmu
   team:'fldO7Wq8cW5Pnifbf',email:'fldgNjaFIzrrXFtGp',phone:'fld1jHbXT1sLuGYfm',
   collected:'fldnxBOu0XpYQNR83',collectedDate:'fldu7w8wlmCLqsG5a'};
 const RATES={bed:15,util:15,house:50,apt:25};
+// ---- Auto-translate guest/cleaner free text (shared cache with maintenance page) ----
+const TCACHE=(()=>{try{return JSON.parse(localStorage.getItem('cabin_tcache')||'{}');}catch(e){return {};}})();
+const TRIED=new Set();let translateWarn=false;
+function userText(t){if(!t)return '';if(LANG!=='en')return t;return TCACHE[t]||t;}
+async function ensureTranslations(texts){
+  if(LANG!=='en')return false;
+  const todo=[...new Set(texts.filter(t=>t&&!(t in TCACHE)&&!TRIED.has(t)))];
+  if(!todo.length)return false;
+  todo.forEach(t=>TRIED.add(t));
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'translate',target:'en',texts:todo})});
+    const data=await r.json();
+    if(data.error){translateWarn=true;return false;}
+    const tr=data.translations||[];let added=false;
+    todo.forEach((t,i)=>{const v=tr[i];if(typeof v==='string'&&v.trim()){TCACHE[t]=v;if(v!==t)added=true;}});
+    try{localStorage.setItem('cabin_tcache',JSON.stringify(TCACHE));}catch(e){}
+    return added;
+  }catch(e){translateWarn=true;return false;}
+}
+function translatableTexts(){
+  const out=[];
+  (RAW||[]).forEach(x=>{const f=x.fields||{};if(f[F.fixNotes])out.push(f[F.fixNotes]);if(f[F.notes])out.push(f[F.notes]);if(f[F.resolutionNotes])out.push(f[F.resolutionNotes]);});
+  return out;
+}
 let RAW=[],UPCOMING=[],RENT_ERR=null,PERIOD='year';
 let BOOKINGS=[],BK_ERR=null,BK_LOADED=false;
 let LANG=localStorage.getItem('cabin_lang')||'cs';
@@ -259,7 +283,7 @@ function applyLang(){
   if(RAW.length||document.getElementById('periods').children.length)render();
 }
 document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
-document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();ensureTranslations(translatableTexts()).then(added=>{if(added)render();});};
 
 async function load(){
   document.getElementById('app').innerHTML='<div class="loading">'+T('Načítám…','Loading…')+'</div>';
@@ -269,6 +293,7 @@ async function load(){
     const {records=[]}=await r.json();
     RAW=records.sort((a,b)=>new Date(whenOf(b))-new Date(whenOf(a)));
     render();
+    ensureTranslations(translatableTexts()).then(added=>{if(added)render();});
   }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst data: ','Could not load data: ')+esc(e.message||e)+'</div>';}
 }
 async function loadBookings(){
@@ -445,7 +470,7 @@ function woPanel(list){
   if(!list.length)return `<div class="empty">${T('Žádné otevřené zakázky. 🌲','No open work orders. 🌲')}</div>`;
   const now=new Date();
   return `<div class="wolist">${list.map(x=>{const age=daysBetween(whenOf(x),now);const k=statusKey(statusOf(x.fields));
-    return `<div class="woitem" data-open="wo" data-id="${x.id}" tabindex="0"><span class="ref">${woRef(x.id)}</span><span class="chip2 c-${k}">${esc(optLabel(statusOf(x.fields)).toUpperCase())}</span><span class="txt">${esc(x.fields[F.fixNotes]||'—')}</span><span class="age ${age>=14?'old':''}">${age} ${daysWord(age)}</span></div>`;}).join('')}</div>`;
+    return `<div class="woitem" data-open="wo" data-id="${x.id}" tabindex="0"><span class="ref">${woRef(x.id)}</span><span class="chip2 c-${k}">${esc(optLabel(statusOf(x.fields)).toUpperCase())}</span><span class="txt">${esc(userText(x.fields[F.fixNotes])||'—')}</span><span class="age ${age>=14?'old':''}">${age} ${daysWord(age)}</span></div>`;}).join('')}</div>`;
 }
 function woRef(id){return '#'+String(id).slice(-4).toUpperCase();}
 
@@ -487,7 +512,7 @@ function woCard(x){
   const f=x.fields;const k=statusKey(statusOf(f));const now=new Date();const age=daysBetween(whenOf(x),now);
   return `<div class="card2" data-open="wo" data-id="${x.id}">
     <div class="r1"><span><span style="font-family:'Space Mono',monospace;color:var(--pine2);font-weight:700">${woRef(x.id)}</span> <span class="chip2 c-${k}">${esc(optLabel(statusOf(f)).toUpperCase())}</span></span><span style="font-family:'Space Mono',monospace;font-size:12px;color:${age>=14?'var(--barn)':'var(--soft)'}">${T('otevřeno','open')} ${age} ${daysWord(age)}</span></div>
-    <div class="meta" style="margin-top:6px;color:var(--ink);font-size:13.5px">${esc(f[F.fixNotes]||'—')}</div>
+    <div class="meta" style="margin-top:6px;color:var(--ink);font-size:13.5px">${esc(userText(f[F.fixNotes])||'—')}</div>
     <div class="meta">${T('Nahlásil/a','Reported by')} ${esc(f[F.cleaner]||'—')} · ${dstr(whenOf(x))}${f[F.assigned]?' · 👤 '+esc(f[F.assigned]):''}</div>
   </div>`;
 }
@@ -536,7 +561,7 @@ function cleaningView(id){
         <div style="font-size:12px;color:var(--soft);margin-bottom:6px">${T('Nesplněné úkoly při odjezdu — účtováno hostům:','Checkout tasks not done — charged to guests:')}</div>
         ${missed.length?missed.map(([id,cs,en,amt])=>`<div class="line"><span>✗ ${T(cs,en)}</span><span class="v">${amt} Kč</span></div>`).join(''):''}
         <div class="line tot"><span>${T('Pokuty celkem','Total fines')}</span><span class="v">${kc(fine)}</span></div></div>`:''}
-      ${notes?`<div class="sec"><div class="st">${T('Poznámky','Notes')}</div><div class="box">${esc(notes)}</div></div>`:''}
+      ${notes?`<div class="sec"><div class="st">${T('Poznámky','Notes')}</div><div class="box">${esc(userText(notes))}</div></div>`:''}
     </div>`;
   }};
 }
@@ -554,8 +579,8 @@ function woView(id){
         <span class="k">${T('Nahlásil/a','Reported by')}</span><span>${esc(f[F.cleaner]||'—')} · ${dstr(whenOf(x))}</span>
         <span class="k">${T('Přiděleno','Assigned to')}</span><span>${esc(f[F.assigned]||'—')}</span></div>
       <div class="box" style="margin-top:10px">${durLine}</div>
-      <div class="sec"><div class="st">${T('Popis závady','Reported problem')}</div><div class="box">${esc(f[F.fixNotes]||'—')}</div></div>
-      ${f[F.resolutionNotes]?`<div class="sec"><div class="st">${T('Co bylo opraveno','What was repaired')}</div><div class="box">${esc(f[F.resolutionNotes])}</div></div>`:''}
+      <div class="sec"><div class="st">${T('Popis závady','Reported problem')}</div><div class="box">${esc(userText(f[F.fixNotes])||'—')}</div></div>
+      ${f[F.resolutionNotes]?`<div class="sec"><div class="st">${T('Co bylo opraveno','What was repaired')}</div><div class="box">${esc(userText(f[F.resolutionNotes]))}</div></div>`:''}
       <div class="sec"><div class="st">${T('Průběh','Updates')}</div>${ups.length?ups.map(u=>`<div class="tl-item">${u.date?`<span class="d">${esc(u.date)}</span> `:''}${u.name?`<span class="au">${esc(u.name)}</span> · `:''}${esc(u.body)}</div>`).join(''):`<div class="empty" style="text-align:left;padding:0">${T('Zatím žádné aktualizace.','No updates yet.')}</div>`}</div>
     </div>`;
   }};

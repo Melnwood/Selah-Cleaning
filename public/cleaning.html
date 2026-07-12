@@ -94,6 +94,25 @@ const B={bookedBy:'fldkrWGTZO9xH3tUg',checkin:'fldpmuL8HMEl49AaY',checkout:'fld6
 // Cleanings / maintenance
 const M={fixNotes:'fld0ySTAz7IwQ6gys',needsFixing:'fld1tdDipneoCHk5Z',mStatus:'fld1XHyJRgSstFmxO',priority:'fldoCrKTXVRW1UX5J',assigned:'fldeaalnwAPlZZ5XP',startAt:'fldy5fzkRiO3WQgd9',renter:'fldesBx0AyJOhxrns',resolutionNotes:'fld6ypazIXO4JuPc0'};
 let LANG=localStorage.getItem('cabin_lang')||'cs';
+const TCACHE=(()=>{try{return JSON.parse(localStorage.getItem('cabin_tcache')||'{}');}catch(e){return {};}})();
+const TRIED=new Set();
+function userText(t){if(!t)return '';if(LANG!=='en')return t;return TCACHE[t]||t;}
+async function ensureTranslations(texts){
+  if(LANG!=='en')return false;
+  const todo=[...new Set(texts.filter(t=>t&&!(t in TCACHE)&&!TRIED.has(t)))];
+  if(!todo.length)return false;
+  todo.forEach(t=>TRIED.add(t));
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'translate',target:'en',texts:todo})});
+    const data=await r.json();
+    if(data.error)return false;
+    const tr=data.translations||[];let added=false;
+    todo.forEach((t,i)=>{const v=tr[i];if(typeof v==='string'&&v.trim()){TCACHE[t]=v;if(v!==t)added=true;}});
+    try{localStorage.setItem('cabin_tcache',JSON.stringify(TCACHE));}catch(e){}
+    return added;
+  }catch(e){return false;}
+}
+function fixTexts(){return (CLEANINGS||[]).map(x=>(x.fields||{})[M.fixNotes]).filter(Boolean);}
 let TAB='stays', BOOKINGS=[], CLEANINGS=[], ERR=null;
 function T(cs,en){return LANG==='en'?en:cs;}
 function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
@@ -109,7 +128,7 @@ function nights(f){const a=dd(f[B.checkin]),b=dd(f[B.checkout]);return (a&&b)?Ma
 
 function applyLang(){document.body.classList.toggle('lang-en',LANG==='en');document.documentElement.lang=LANG;document.getElementById('btnCs').classList.toggle('on',LANG==='cs');document.getElementById('btnEn').classList.toggle('on',LANG==='en');render();}
 document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
-document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();ensureTranslations(fixTexts()).then(a=>{if(a)render();});};
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('sel',x===b));render();});
 
 async function load(){
@@ -122,6 +141,7 @@ async function load(){
     BOOKINGS=jb.records||[]; CLEANINGS=jc.records||[];
   }catch(e){ERR=e.message||String(e);}
   render();
+  ensureTranslations(fixTexts()).then(a=>{if(a)render();});
 }
 
 function staysBody(){
@@ -154,7 +174,7 @@ function repairsBody(){
     const hi=/Vysok|High|Urgent|Naléh/i.test(pr);
     return `<div class="card">
       <div class="r1"><span class="nm">${esc(f[M.renter]||T('Závada','Issue'))}</span><span class="dt">${dstr(f[M.startAt])}</span></div>
-      ${f[M.fixNotes]?`<div class="fixbox">${esc(f[M.fixNotes])}</div>`:''}
+      ${f[M.fixNotes]?`<div class="fixbox">${esc(userText(f[M.fixNotes]))}</div>`:''}
       <div class="tagrow">
         <span class="tag ${prog?'prog':'open'}">${esc((optLabel(s)||T('Nové','Open')).toUpperCase())}</span>
         ${hi?`<span class="tag hi">${esc(optLabel(pr).toUpperCase())}</span>`:''}

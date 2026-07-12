@@ -162,6 +162,25 @@ const ROOMS=[
 ];
 let RAW=[],FILTER='all';
 let LANG=localStorage.getItem('cabin_lang')||'cs';
+const TCACHE=(()=>{try{return JSON.parse(localStorage.getItem('cabin_tcache')||'{}');}catch(e){return {};}})();
+const TRIED=new Set();
+function userText(t){if(!t)return '';if(LANG!=='en')return t;return TCACHE[t]||t;}
+async function ensureTranslations(texts){
+  if(LANG!=='en')return false;
+  const todo=[...new Set(texts.filter(t=>t&&!(t in TCACHE)&&!TRIED.has(t)))];
+  if(!todo.length)return false;
+  todo.forEach(t=>TRIED.add(t));
+  try{
+    const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({action:'translate',target:'en',texts:todo})});
+    const data=await r.json();
+    if(data.error)return false;
+    const tr=data.translations||[];let added=false;
+    todo.forEach((t,i)=>{const v=tr[i];if(typeof v==='string'&&v.trim()){TCACHE[t]=v;if(v!==t)added=true;}});
+    try{localStorage.setItem('cabin_tcache',JSON.stringify(TCACHE));}catch(e){}
+    return added;
+  }catch(e){return false;}
+}
+function noteTexts(){return (RAW||[]).map(x=>(x.fields||{})[F.notes]).filter(Boolean);}
 function T(cs,en){return LANG==='en'?en:cs;}
 function locale(){return LANG==='en'?'en-GB':'cs-CZ';}
 function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
@@ -178,7 +197,7 @@ function applyLang(){
   if(RAW.length||document.getElementById('kpis').children.length)render();
 }
 document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
-document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
+document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();ensureTranslations(noteTexts()).then(a=>{if(a)render();});};
 
 async function load(){
   document.getElementById('app').innerHTML='<div class="loading">'+T('Načítám…','Loading…')+'</div>';
@@ -188,6 +207,7 @@ async function load(){
     const {records=[]}=await r.json();
     RAW=records.filter(x=>!x.fields[F.repairOnly]).sort((a,b)=>new Date(b.fields[F.startAt]||b.createdTime)-new Date(a.fields[F.startAt]||a.createdTime));
     render();
+    ensureTranslations(noteTexts()).then(a=>{if(a)render();});
   }catch(e){document.getElementById('app').innerHTML='<div class="err">'+T('Nepodařilo se načíst data: ','Could not load data: ')+esc(e.message||e)+'</div>';}
 }
 
@@ -271,7 +291,7 @@ function detail(f){
   const notes=f[F.notes]||'';
   return `<div>${html}</div>
     ${fine?`<div class="finebox">${T('Pokuty hostům za tento pobyt','Guest fines for this stay')}: <b>${kc(fine)}</b> — ${T('účtováno hostům, netýká se platby uklízeči.','charged to guests, not the cleaner.')}</div>`:''}
-    ${notes?`<div class="notebox">${esc(notes)}</div>`:''}`;
+    ${notes?`<div class="notebox">${esc(userText(notes))}</div>`:''}`;
 }
 
 function wire(x){

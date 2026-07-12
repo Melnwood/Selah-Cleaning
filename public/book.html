@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -143,9 +143,6 @@ textarea{min-height:70px;resize:vertical}
         <div class="mark">SELAH</div>
         <h1><span class="cs-only">Rezervace domu</span><span class="en-only">Book the house</span></h1>
       </div>
-      <div class="langtog" role="group" aria-label="Jazyk / Language">
-        <button type="button" id="btnCs">CZ</button><button type="button" id="btnEn">EN</button>
-      </div>
     </div>
     <div class="staffnote">🔑 <span class="cs-only">Rezervace je pouze pro pracovníky JV. Po odeslání žádost potvrdí Amy.</span><span class="en-only">Booking is for JV staff only. Amy confirms each request after you submit.</span></div>
   </header>
@@ -261,7 +258,7 @@ const BF={bookedBy:'fldkrWGTZO9xH3tUg',space:'fldUYaGvdvcV3EZOM',checkin:'fldpmu
   signature:'fldrTq35YqRfKXXB5',status:'fldpaz8B5NbPQ46pR',submitted:'fldmEZN27QcX4UxPV',
   payment:'fldHvsV5XaIiSm5hl',acct:'fldGUaa6bMqkISP4e'};
 const SPACE_LABEL={main:'Hlavní dům (Main house)',both:'Hlavní dům + apartmán (Main house + Apartment)'};
-let LANG=localStorage.getItem('cabin_lang')||'cs';
+const LANG='en'; // guest-facing booking page is English only
 function T(cs,en){return LANG==='en'?en:cs;}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function hdr(){const c=localStorage.getItem('cabin_code')||'';return c?{'Content-Type':'application/json','x-access-code':c}:{'Content-Type':'application/json'};}
@@ -273,13 +270,9 @@ let view=new Date(); view.setDate(1);
 const today=new Date(); today.setHours(0,0,0,0);
 
 function applyLang(){
-  document.body.classList.toggle('lang-en',LANG==='en');document.documentElement.lang=LANG;
-  document.getElementById('btnCs').classList.toggle('on',LANG==='cs');
-  document.getElementById('btnEn').classList.toggle('on',LANG==='en');
+  document.body.classList.add('lang-en');document.documentElement.lang='en';
   renderDow();renderCal();renderCost();renderGuestCount();renderRules();renderPurpose();
 }
-document.getElementById('btnCs').onclick=()=>{LANG='cs';localStorage.setItem('cabin_lang','cs');applyLang();};
-document.getElementById('btnEn').onclick=()=>{LANG='en';localStorage.setItem('cabin_lang','en');applyLang();};
 
 // ---- date helpers ----
 function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
